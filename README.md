@@ -1,6 +1,12 @@
 # Whistle
 
-**TODO: Add description**
+Run with
+
+```
+$ iex -S mix
+```
+
+Then navigate to http://localhost:4000/index.html to preview the app
 
 ## Installation
 
