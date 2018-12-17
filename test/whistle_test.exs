@@ -2,7 +2,7 @@ defmodule WhistleTest do
   use ExUnit.Case
   doctest Whistle
 
-  alias Whistle.Html
+  alias Whistle.{Html, Dom}
 
   test "greets the world" do
     # model =
@@ -43,9 +43,9 @@ defmodule WhistleTest do
     #     {:replace_text, [0, 1, 0], "Adeu"}
     #   ]
 
-    Html.diff([], node1, node2)
+    Dom.diff([], node1, node2)
     |> IO.inspect()
-    |> Html.serialize_patches()
+    |> Dom.serialize_patches()
     |> IO.inspect()
   end
 end

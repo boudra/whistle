@@ -1,8 +1,4 @@
 defmodule Whistle do
-  @moduledoc """
-  Documentation for Whistle.
-  """
-
   alias Whistle.Html
 
   def init() do
