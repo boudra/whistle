@@ -27,12 +27,12 @@ defmodule Whistle do
     {0,
      Html.div([class: "text"], [
        Html.p([], [Html.text(text)]),
-       Html.node("input", [value: text, on_input: &{:change_text, &1}], []),
+       Html.node("input", [value: text, on: [input: &{:change_text, &1}]], []),
        Html.p([], [number]),
-       Html.button([on_click: {:increment, 2}], [
+       Html.button([on: [click: {:increment, 2}]], [
          Html.text("+1")
        ]),
-       Html.button([on_click: {:decrement}], [
+       Html.button([on: [click: {:decrement}]], [
          Html.text("-1")
        ])
      ])}

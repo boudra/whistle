@@ -109,6 +109,33 @@ defmodule Whistle.Html do
     {:text, [], content}
   end
 
+  def extract_event_handlers(path, {key, {tag, attributes, children}}) do
+    key = path ++ [key]
+    string_key = Enum.join(key, ".")
+
+    handlers =
+      attributes
+      |> Keyword.get(:on)
+      |> case do
+        nil -> []
+        handlers ->
+          Enum.map(handlers, fn {type, msg} ->
+            {string_key <> "." <> Atom.to_string(type), msg}
+          end)
+      end
+
+    child_handlers =
+      if is_list(children) do
+        Enum.reduce(children, [], fn node, handlers ->
+          handlers ++ extract_event_handlers(key, node)
+        end)
+      else
+        []
+      end
+
+    handlers ++ child_handlers
+  end
+
   def serialize_virtual_dom(path, {key, {tag, attributes, children}}) do
     key = path ++ [key]
 
@@ -116,8 +143,8 @@ defmodule Whistle.Html do
       attributes
       |> Enum.concat(key: Enum.join(key, "."))
       |> Enum.map(fn
-        {k, v} when not is_binary(v) ->
-          {Atom.to_string(k), ""}
+        {:on, handlers} ->
+          {"on", Keyword.keys(handlers)}
 
         {k, v} ->
           {Atom.to_string(k), v}

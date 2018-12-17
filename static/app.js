@@ -7,7 +7,20 @@ function renderVirtualDom(parent, vdom) {
     parent.appendChild(node);
   } else {
     let node = document.createElement(vdom[0]);
-    node.attributes = vdom[1];
+    for (var key in vdom[1]) {
+      const attributeValue = vdom[1][key];
+      if(key == "on") {
+        attributeValue.forEach(function(eventName) {
+          node.addEventListener(eventName, function(e) {
+            socket.send(JSON.stringify({
+              handler: vdom[1].key + "." + eventName,
+              arguments: [e.target.value]
+            }));
+          });
+        });
+      }
+    }
+
     parent.appendChild(node);
     vdom[2].forEach(function(child) {
       renderVirtualDom(node, child);
