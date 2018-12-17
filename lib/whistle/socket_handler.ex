@@ -24,7 +24,7 @@ defmodule Whistle.SocketHandler do
 
   def reply_render(state) do
     new_vdom =
-      Whistle.view(state.model)
+      {0, Whistle.view(state.model)}
 
     vdom_diff =
       Whistle.Dom.diff([], state.vdom, new_vdom)

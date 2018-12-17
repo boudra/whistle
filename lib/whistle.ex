@@ -20,17 +20,16 @@ defmodule Whistle do
   def view(%{number: number, text: text}) do
     number = number |> Integer.to_string() |> Html.text()
 
-    {0,
-     Html.div([class: "text"], [
-       Html.p([], [Html.text(text)]),
-       Html.node("input", [value: text, on: [input: &{:change_text, &1}]], []),
-       Html.p([], [number]),
-       Html.button([on: [click: {:increment, 1}]], [
-         Html.text("+1")
-       ]),
-       Html.button([on: [click: {:decrement}]], [
-         Html.text("-1")
-       ])
-     ])}
+    Html.div([class: "text"], [
+      Html.p([], [Html.text(text)]),
+      Html.node("input", [value: text, on: [input: &{:change_text, &1}]], []),
+      Html.p([], [number]),
+      Html.button([on: [click: {:increment, 1}]], [
+        Html.text("+1")
+      ]),
+      Html.button([on: [click: {:decrement}]], [
+        Html.text("-1")
+      ])
+    ])
   end
 end
