@@ -8,11 +8,9 @@ defmodule Whistle.SocketHandler do
   def websocket_init(_state) do
     model = Whistle.init()
 
-    {:ok, %{handlers: [], vdom: {0, {nil, [], []}}, model: model}}
-  end
+    send(self(), :render)
 
-  def websocket_handle({:text, "hola"}, state) do
-    reply_render(state)
+    {:ok, %{handlers: [], vdom: nil, model: model}}
   end
 
   def websocket_handle({:text, payload}, state) do
@@ -28,6 +26,7 @@ defmodule Whistle.SocketHandler do
 
     vdom_diff =
       Whistle.Dom.diff([], state.vdom, new_vdom)
+      |> IO.inspect()
       |> Whistle.Dom.serialize_patches()
 
     handlers =
@@ -37,7 +36,19 @@ defmodule Whistle.SocketHandler do
     {:reply, {:text, vdom_diff}, %{state | handlers: handlers, vdom: new_vdom}}
   end
 
-  def handle({handler, args}, state = %{handlers: handlers, model: model}) do
+  def websocket_info(:render, state) do
+    reply_render(state)
+  end
+
+  def websocket_info({:message, message}, state) do
+    update_model(message, state)
+  end
+
+  def terminate(_reason, _req, _state) do
+    :ok
+  end
+
+  defp handle({handler, args}, state = %{handlers: handlers}) do
     message =
       case Map.get(handlers, handler) do
         handler when is_function(handler) ->
@@ -47,16 +58,12 @@ defmodule Whistle.SocketHandler do
           msg
       end
 
+    update_model(message, state)
+  end
+
+  defp update_model(message, state = %{model: model}) do
     new_model = Whistle.update(model, message)
 
     reply_render(%{state | model: new_model})
-  end
-
-  def websocket_info(_info, state) do
-    {:reply, state}
-  end
-
-  def terminate(_reason, _req, _state) do
-    :ok
   end
 end

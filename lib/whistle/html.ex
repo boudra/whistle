@@ -52,6 +52,18 @@ defmodule Whistle.Html do
     node("button", attributes, children)
   end
 
+  def input(attributes, children) do
+    node("input", attributes, children)
+  end
+
+  def ul(attributes, children) do
+    node("ul", attributes, children)
+  end
+
+  def li(attributes, children) do
+    node("li", attributes, children)
+  end
+
   def text(content) do
     {:text, [], content}
   end

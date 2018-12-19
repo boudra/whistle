@@ -1,12 +1,13 @@
 let socket = new WebSocket("ws://localhost:4000/ws/1")
 let target = document.querySelector("#target");
 
-function renderVirtualDom(parent, vdom) {
+function renderVirtualDom(vdom) {
+  let node = null;
+
   if(vdom[0] == "text") {
-    let node = document.createTextNode(vdom[2])
-    parent.appendChild(node);
+    node = document.createTextNode(vdom[2])
   } else {
-    let node = document.createElement(vdom[0]);
+    node = document.createElement(vdom[0]);
     for (var key in vdom[1]) {
       const attributeValue = vdom[1][key];
       if(key == "on") {
@@ -18,14 +19,18 @@ function renderVirtualDom(parent, vdom) {
             }));
           });
         });
+      } else {
+        node.setAttribute(key, attributeValue);
       }
     }
 
-    parent.appendChild(node);
     vdom[2].forEach(function(child) {
-      renderVirtualDom(node, child);
+      let childNode = renderVirtualDom(child);
+      node.appendChild(childNode);
     });
   }
+
+  return node;
 }
 
 function findNodeByPath(parent, path) {
@@ -35,19 +40,36 @@ function findNodeByPath(parent, path) {
 }
 
 socket.addEventListener("open", (event) => {
-  socket.send("hola");
 })
 
 socket.addEventListener("message", (event) => {
   let patches = JSON.parse(event.data);
-  console.log(patches);
 
   patches.forEach(function(patch) {
     switch(patch[0]) {
       case "replace_node":
         {
+          const node = renderVirtualDom(patch[2]);
+          findNodeByPath(target, patch[1]).replaceWith(node);
+        }
+        break;
+
+      case "add_node":
+        {
+          const parent = findNodeByPath(target, patch[1]);
+          const node = renderVirtualDom(patch[2]);
+          parent.appendChild(node);
+        }
+        break;
+
+      case "set_attribute":
+        {
           let replaceTarget = findNodeByPath(target, patch[1]);
-          renderVirtualDom(replaceTarget, patch[2]);
+          if(patch[2][0] == "value") {
+            replaceTarget.value = patch[2][1];
+          } else{
+            replaceTarget.setAttribute(patch[2][0], patch[2][1]);
+          }
         }
         break;
 

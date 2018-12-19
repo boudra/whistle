@@ -2,34 +2,43 @@ defmodule Whistle do
   alias Whistle.Html
 
   def init() do
-    %{number: 0, text: "hola"}
+    %{text: "hola", tasks: [], error: nil}
   end
 
   def update(state, {:change_text, text}) do
     %{state | text: text}
   end
 
-  def update(state = %{number: number}, {:increment, n}) do
-    %{state | number: number + n}
+  def update(state = %{text: ""}, :add_task) do
+    %{state | error: "Please write a task"}
   end
 
-  def update(state = %{number: number}, {:decrement}) do
-    %{state | number: number - 1}
+  def update(state = %{text: text, tasks: tasks}, :add_task) do
+    %{state | error: nil, text: "", tasks: [text | tasks]}
   end
 
-  def view(%{number: number, text: text}) do
-    number = number |> Integer.to_string() |> Html.text()
+  def view_error(nil) do
+    Html.text("")
+  end
 
+  def view_error(error) do
+    Html.p([style: "color: red"], [
+      Html.text(error)
+    ])
+  end
+
+  def view_task(task) do
+    Html.li([], [Html.text(task)])
+  end
+
+  def view(state = %{text: text, tasks: tasks}) do
     Html.div([class: "text"], [
-      Html.p([], [Html.text(text)]),
-      Html.node("input", [value: text, on: [input: &{:change_text, &1}]], []),
-      Html.p([], [number]),
-      Html.button([on: [click: {:increment, 1}]], [
-        Html.text("+1")
+      Html.input([value: text, on: [input: &{:change_text, &1}]], []),
+      view_error(state.error),
+      Html.button([on: [click: :add_task]], [
+        Html.text("Add task")
       ]),
-      Html.button([on: [click: {:decrement}]], [
-        Html.text("-1")
-      ])
+      Html.ul([], Enum.map(tasks, &view_task/1))
     ])
   end
 end

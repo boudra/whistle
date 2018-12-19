@@ -5,45 +5,24 @@ defmodule WhistleTest do
   alias Whistle.{Html, Dom}
 
   test "greets the world" do
-    # model =
-    #   Whistle.init()
-    #   |> Whistle.update({:increment, 5})
-    #
-    # view1 =
-    #   model
-    #   |> Whistle.view()
-    #   |> IO.inspect()
-    #
-    # view2 =
-    #   model
-    #   |> Whistle.update({:decrement})
-    #   |> Whistle.view()
-    #   |> Whistle.Html.to_string()
-    #   |> IO.inspect()
+    model =
+      Whistle.init()
+      |> Whistle.update({:change_text, "hola"})
+      |> Whistle.update(:add_task)
 
-    node1 =
-      {0,
-       Html.div([class: "text"], [
-         Html.p([], [Html.text("hello")]),
-         Html.p([], [Html.text("Hola")])
-       ])}
+    view1 =
+      model
+      |> Whistle.view()
       |> IO.inspect()
 
-    node2 =
-      {0,
-       Html.div([class: "text"], [
-         Html.p([], [Html.text("Hola")]),
-         Html.div([], [Html.text("hello")])
-       ])}
+    view2 =
+      model
+      |> Whistle.update({:change_text, "xxx"})
+      |> Whistle.update(:add_task)
+      |> Whistle.view()
       |> IO.inspect()
 
-    # diff =
-    #   [
-    #     {:replace_tag, [0, 0], "div"},
-    #     {:replace_text, [0, 1, 0], "Adeu"}
-    #   ]
-
-    Dom.diff([], node1, node2)
+    Dom.diff([], {0, view1}, {0, view2})
     |> IO.inspect()
     |> Dom.serialize_patches()
     |> IO.inspect()
