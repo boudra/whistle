@@ -63,7 +63,7 @@ defmodule Whistle.Dom do
 
   def diff(path, nil, {key, new_node}) do
     [
-      {:add_node, path, new_node}
+      {:add_node, path, {key, new_node}}
     ]
   end
 
@@ -147,7 +147,7 @@ defmodule Whistle.Dom do
         ["replace_node", path, serialize_virtual_dom(path, {0, data})]
 
       {:add_node, path, data} ->
-        ["add_node", path, serialize_virtual_dom(path, {0, data})]
+        ["add_node", path, serialize_virtual_dom(path, data)]
 
       {op, path, data} ->
         [Atom.to_string(op), path, data]

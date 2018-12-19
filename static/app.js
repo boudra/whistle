@@ -1,5 +1,16 @@
-let socket = new WebSocket("ws://localhost:4000/ws/1")
+let socket = new WebSocket(`ws://${window.location.host}/ws/1`)
 let target = document.querySelector("#target");
+
+function setAttribute(node, key, value) {
+  if(key == "on") {
+  } else if(key == "value") {
+    node.value = value;
+  } else if (key == "checked") {
+    node.checked = value;
+  } else{
+    node.setAttribute(key, value);
+  }
+}
 
 function renderVirtualDom(vdom) {
   let node = null;
@@ -20,7 +31,7 @@ function renderVirtualDom(vdom) {
           });
         });
       } else {
-        node.setAttribute(key, attributeValue);
+        setAttribute(node, key, attributeValue);
       }
     }
 
@@ -65,11 +76,7 @@ socket.addEventListener("message", (event) => {
       case "set_attribute":
         {
           let replaceTarget = findNodeByPath(target, patch[1]);
-          if(patch[2][0] == "value") {
-            replaceTarget.value = patch[2][1];
-          } else{
-            replaceTarget.setAttribute(patch[2][0], patch[2][1]);
-          }
+          setAttribute(replaceTarget, patch[2][0], patch[2][1]);
         }
         break;
 

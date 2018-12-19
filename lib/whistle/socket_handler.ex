@@ -21,6 +21,8 @@ defmodule Whistle.SocketHandler do
   end
 
   def reply_render(state) do
+    IEx.Helpers.r(Whistle)
+
     new_vdom =
       {0, Whistle.view(state.model)}
 
@@ -31,6 +33,7 @@ defmodule Whistle.SocketHandler do
 
     handlers =
       Whistle.Dom.extract_event_handlers([], new_vdom)
+      |> IO.inspect()
       |> Enum.into(%{})
 
     {:reply, {:text, vdom_diff}, %{state | handlers: handlers, vdom: new_vdom}}
@@ -62,6 +65,8 @@ defmodule Whistle.SocketHandler do
   end
 
   defp update_model(message, state = %{model: model}) do
+    IO.inspect message
+
     new_model = Whistle.update(model, message)
 
     reply_render(%{state | model: new_model})

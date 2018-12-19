@@ -9,12 +9,27 @@ defmodule Whistle do
     %{state | text: text}
   end
 
+  def update(state = %{tasks: tasks}, {:trigger_task, index}) do
+    tasks =
+      tasks
+      |> Enum.with_index()
+      |> Enum.map(fn {{done, task}, task_index} ->
+        if task_index == index do
+          {not done, task}
+        else
+          {done, task}
+        end
+      end)
+
+    %{state | tasks: tasks}
+  end
+
   def update(state = %{text: ""}, :add_task) do
     %{state | error: "Please write a task"}
   end
 
   def update(state = %{text: text, tasks: tasks}, :add_task) do
-    %{state | error: nil, text: "", tasks: [text | tasks]}
+    %{state | error: nil, text: "", tasks: tasks ++ [{false, text}]}
   end
 
   def view_error(nil) do
@@ -27,18 +42,39 @@ defmodule Whistle do
     ])
   end
 
-  def view_task(task) do
-    Html.li([], [Html.text(task)])
+  def view_task({{done, task}, index}) do
+    style =
+      if done do
+        "color: green"
+      else
+        ""
+      end
+
+    Html.li([style: style], [
+      Html.input([
+        type: "checkbox",
+        on: [
+          change: {:trigger_task, index}
+        ],
+        checked: done
+      ], []),
+      Html.text(task)
+    ])
   end
 
   def view(state = %{text: text, tasks: tasks}) do
+    tasks =
+      tasks
+      |> Enum.with_index()
+      |> Enum.map(&view_task/1)
+
     Html.div([class: "text"], [
       Html.input([value: text, on: [input: &{:change_text, &1}]], []),
       view_error(state.error),
       Html.button([on: [click: :add_task]], [
         Html.text("Add task")
       ]),
-      Html.ul([], Enum.map(tasks, &view_task/1))
+      Html.ul([], tasks)
     ])
   end
 end
