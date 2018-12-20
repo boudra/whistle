@@ -52,8 +52,8 @@ defmodule Whistle.Html do
     node("button", attributes, children)
   end
 
-  def input(attributes, children) do
-    node("input", attributes, children)
+  def input(attributes) do
+    node("input", attributes, [])
   end
 
   def ul(attributes, children) do
@@ -62,6 +62,10 @@ defmodule Whistle.Html do
 
   def li(attributes, children) do
     node("li", attributes, children)
+  end
+
+  def br() do
+    node("br", [], [])
   end
 
   def text(content) do

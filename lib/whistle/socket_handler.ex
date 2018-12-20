@@ -1,16 +1,19 @@
 defmodule Whistle.SocketHandler do
   @behaviour :cowboy_websocket
 
-  def init(req, state) do
-    {:cowboy_websocket, req, state}
+  def init(req, {router, []}) do
+    conn = Plug.Cowboy.Conn.conn(req)
+    program = router.route(conn)
+
+    {:cowboy_websocket, req, program}
   end
 
-  def websocket_init(_state) do
-    model = Whistle.init()
+  def websocket_init(program) do
+    model = program.init(%{})
 
     send(self(), :render)
 
-    {:ok, %{handlers: [], vdom: nil, model: model}}
+    {:ok, %{program: program, handlers: [], vdom: nil, model: model}}
   end
 
   def websocket_handle({:text, payload}, state) do
@@ -21,19 +24,17 @@ defmodule Whistle.SocketHandler do
   end
 
   def reply_render(state) do
-    IEx.Helpers.r(Whistle)
+    IEx.Helpers.r(state.program)
 
     new_vdom =
-      {0, Whistle.view(state.model)}
+      {0, state.program.view(state.model)}
 
     vdom_diff =
       Whistle.Dom.diff([], state.vdom, new_vdom)
-      |> IO.inspect()
       |> Whistle.Dom.serialize_patches()
 
     handlers =
       Whistle.Dom.extract_event_handlers([], new_vdom)
-      |> IO.inspect()
       |> Enum.into(%{})
 
     {:reply, {:text, vdom_diff}, %{state | handlers: handlers, vdom: new_vdom}}
@@ -65,9 +66,7 @@ defmodule Whistle.SocketHandler do
   end
 
   defp update_model(message, state = %{model: model}) do
-    IO.inspect message
-
-    new_model = Whistle.update(model, message)
+    new_model = state.program.update(model, message)
 
     reply_render(%{state | model: new_model})
   end

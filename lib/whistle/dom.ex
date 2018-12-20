@@ -1,4 +1,6 @@
 defmodule Whistle.Dom do
+  @type t() :: tuple()
+
   defp zip([lh | lt], [rh | rt]) do
     [{lh, rh} | zip(lt, rt)]
   end
