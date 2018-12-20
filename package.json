@@ -1,0 +1,24 @@
+{
+  "name": "whistle",
+  "version": "1.0.0",
+  "description": "Run with",
+  "main": "priv/whistle.js",
+  "directories": {
+    "doc": "doc",
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/boudra/whistle.git"
+  },
+  "author": "Mohamed Boudra",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/boudra/whistle/issues"
+  },
+  "homepage": "https://github.com/boudra/whistle#readme"
+}
