@@ -1,3 +1,3 @@
 defmodule Whistle.Router do
-  @callback router(Plug.Conn.t()) :: atom()
+  @callback join(Plug.Conn.t(), map()) :: {:ok, atom()}
 end

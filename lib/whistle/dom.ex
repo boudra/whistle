@@ -63,6 +63,10 @@ defmodule Whistle.Dom do
     )
   end
 
+  def diff(path, nil, nil) do
+    []
+  end
+
   def diff(path, nil, {key, new_node}) do
     [
       {:add_node, path, {key, new_node}}
@@ -154,6 +158,5 @@ defmodule Whistle.Dom do
       {op, path, data} ->
         [Atom.to_string(op), path, data]
     end)
-    |> Jason.encode!()
   end
 end

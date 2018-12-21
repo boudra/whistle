@@ -30,7 +30,8 @@ defmodule Whistle.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :plug_cowboy]
+      mod: {Whistle.Application, []},
+      extra_applications: [:logger, :plug_cowboy, :phoenix_pubsub]
     ]
   end
 
@@ -38,6 +39,7 @@ defmodule Whistle.MixProject do
   defp deps do
     [
       {:plug, "~> 1.7"},
+      {:phoenix_pubsub, "~> 1.0"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:ex_doc, ">= 0.0.0", only: :dev}

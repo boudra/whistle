@@ -7,7 +7,13 @@ module.exports = {
     return socket;
   },
 
-  mount(socket, program, target) {
+  mount(socket, target, program, params) {
+
+    socket.send(JSON.stringify({
+      type: "join",
+      channel: program,
+      params: params
+    }));
 
     function setAttribute(node, key, value) {
       if(key == "on") {
@@ -33,6 +39,8 @@ module.exports = {
             attributeValue.forEach(function(eventName) {
               node.addEventListener(eventName, function(e) {
                 socket.send(JSON.stringify({
+                  type: "event",
+                  channel: program,
                   handler: vdom[1].key + "." + eventName,
                   arguments: [e.target.value]
                 }));
@@ -59,7 +67,10 @@ module.exports = {
     }
 
     socket.addEventListener("message", (event) => {
-      let patches = JSON.parse(event.data);
+      const data = JSON.parse(event.data);
+      const patches = data.dom_patches;
+
+      console.log(data);
 
       patches.forEach(function(patch) {
         switch(patch[0]) {
@@ -92,7 +103,7 @@ module.exports = {
             break;
         }
       });
-    })
+    });
 
   }
 }

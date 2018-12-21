@@ -1,6 +1,10 @@
 # Whistle
 
-Run with
+Whistle is a different approach to building web applications, it allows you to write interactive dynamic web apps entirely in Elixir.
+
+## How does it work?
+
+If you are familiar with [The Elm Architecture](https://guide.elm-lang.org/architecture/), Whistle moves this architecture to the server and streams DOM changes to the client via WebSockets.
 
 ```
 $ iex -S mix
