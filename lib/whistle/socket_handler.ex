@@ -4,10 +4,10 @@ defmodule Whistle.SocketHandler do
   alias Whistle.{ProgramRegistry, Socket}
 
   def init(req, state) do
-    {:cowboy_websocket, req, state}
+    {:cowboy_websocket, req, {req, state}}
   end
 
-  def websocket_init({router, []}) do
+  def websocket_init({_req, {router, []}}) do
     {:ok, %{
       socket: %Socket{},
       router: router,
