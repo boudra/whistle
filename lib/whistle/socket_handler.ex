@@ -3,6 +3,8 @@ defmodule Whistle.SocketHandler do
 
   alias Whistle.{ProgramRegistry, Socket}
 
+  @json_library Application.get_env(:whistle, :json_library, Jason)
+
   def init(req, state) do
     {:cowboy_websocket, req, {req, state}}
   end
@@ -17,7 +19,7 @@ defmodule Whistle.SocketHandler do
 
   def websocket_handle({:text, payload}, state = %{socket: socket, channels: channels}) do
     payload
-    |> Jason.decode()
+    |> @json_library.decode()
     |> case do
       {:ok, %{"type" => "event", "channel" => channel, "handler" => handler, "arguments" => args}} ->
         handle(channel, {handler, args}, state)
@@ -66,7 +68,7 @@ defmodule Whistle.SocketHandler do
       |> Whistle.Dom.serialize_patches()
 
     if length(vdom_diff) > 0 do
-      response = Jason.encode!(%{
+      response = @json_library.encode!(%{
         channel: channel,
         dom_patches: vdom_diff
       })
