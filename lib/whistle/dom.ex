@@ -63,7 +63,7 @@ defmodule Whistle.Dom do
     )
   end
 
-  def diff(path, nil, nil) do
+  def diff(_path, nil, nil) do
     []
   end
 

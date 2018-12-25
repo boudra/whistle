@@ -1,4 +1,4 @@
-defmodule Whistle.ProgramChannel do
+defmodule Whistle.ProgramInstance do
   use GenServer
 
   def init({name, program, params}) do
@@ -16,11 +16,11 @@ defmodule Whistle.ProgramChannel do
     {:reply, {new_view, new_socket}, {name, program, new_model}}
   end
 
-  def handle_call({:view, socket}, _from, state = {name, program, model}) do
+  def handle_call({:view, socket}, _from, state = {_name, program, model}) do
     {:reply, {0, program.view(model, socket)}, state}
   end
 
-  def handle_call({:authorize, socket, params}, _from, state = {name, program, model}) do
+  def handle_call({:authorize, socket, params}, _from, state = {_name, program, _model}) do
     {:reply, program.authorize(state, socket, params), state}
   end
 end

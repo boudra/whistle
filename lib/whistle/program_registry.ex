@@ -1,4 +1,4 @@
-defmodule Whistle.ProgramRepo do
+defmodule Whistle.ProgramRegistry do
   use GenServer
 
   def start_link(name) do
@@ -14,7 +14,7 @@ defmodule Whistle.ProgramRepo do
       Map.get_lazy(programs, name, fn ->
         {:ok, pid} =
           GenServer.start_link(
-            Whistle.ProgramChannel,
+            Whistle.ProgramInstance,
             {name, program, params}
           )
 

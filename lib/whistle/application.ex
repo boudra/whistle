@@ -6,7 +6,7 @@ defmodule Whistle.Application do
 
     children = [
       supervisor(Phoenix.PubSub.PG2, [Whistle.PubSub, []]),
-      worker(Whistle.ProgramRepo, [Whistle.ProgramRepo])
+      worker(Whistle.ProgramRegistry, [Whistle.ProgramRegistry])
     ]
 
     opts = [strategy: :one_for_one, name: MyApp.Supervisor]

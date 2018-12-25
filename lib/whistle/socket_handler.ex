@@ -1,7 +1,7 @@
 defmodule Whistle.SocketHandler do
   @behaviour :cowboy_websocket
 
-  alias Whistle.{ProgramRepo, Socket}
+  alias Whistle.{ProgramRegistry, Socket}
 
   def init(req, state) do
     {:cowboy_websocket, req, state}
@@ -29,7 +29,7 @@ defmodule Whistle.SocketHandler do
         {pid, new_socket} =
           case state.router.__match(channel_path) do
             {:ok, program, program_params} ->
-              {:ok, pid} = ProgramRepo.ensure_started(channel, program, program_params)
+              {:ok, pid} = ProgramRegistry.ensure_started(channel, program, program_params)
               {:ok, new_socket} = GenServer.call(pid, {:authorize, socket, Map.merge(program_params, params)})
 
               {pid, new_socket}
