@@ -9,13 +9,13 @@ defmodule Whistle.ProgramRepo do
     {:ok, state}
   end
 
-  def handle_call({:ensure_started, name, program, flags}, _from, programs) do
+  def handle_call({:ensure_started, name, program, params}, _from, programs) do
     pid =
       Map.get_lazy(programs, name, fn ->
         {:ok, pid} =
           GenServer.start_link(
             Whistle.ProgramChannel,
-            {name, program, flags}
+            {name, program, params}
           )
 
         pid

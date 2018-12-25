@@ -6,21 +6,31 @@ defmodule Whistle.Router do
     end
   end
 
-  defmacro route(expr, program, params) do
-    match =
-      expr
-      |> String.split(":")
-      |> case do
-        [topic, "*"] ->
-          quote do: "#{unquote(topic)}:" <> _
+  defmacro match(expr, program, params) do
+    expr_components =
+      String.split(expr, ":")
 
-        [topic, subtopic] ->
-          quote do: "#{unquote(topic)}:#{unquote(subtopic)}"
-      end
+    expr_match =
+      Enum.map(expr_components, fn
+        "*" -> {:_, [], nil}
+        "*" <> name -> {String.to_atom(name), [], nil}
+        part -> part
+      end)
+
+    params_map =
+      Enum.reduce(expr_components, [], fn
+        "*" <> name, acc when byte_size(name) > 0 -> acc ++ [
+          {name, {String.to_atom(name), [], nil}}
+        ]
+        _, acc -> acc
+      end)
 
     quote do
-      def __route(unquote(match)) do
-        {:ok, unquote(program), unquote(params)}
+      def __match(unquote(expr_match)) do
+        new_params =
+          Map.merge(unquote(params), Map.new(unquote(params_map)))
+
+        {:ok, unquote(program), new_params}
       end
     end
   end

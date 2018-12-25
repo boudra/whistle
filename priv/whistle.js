@@ -1,13 +1,11 @@
-module.exports = {
+(function(exports) {
 
-  connect(url) {
-    const socket =
-      new WebSocket(url)
-
+  exports.connect = function(url) {
+    var socket = new WebSocket(url);
     return socket;
-  },
+  };
 
-  mount(socket, target, program, params) {
+  exports.mount = function(socket, target, program, params) {
 
     socket.send(JSON.stringify({
       type: "join",
@@ -27,14 +25,14 @@ module.exports = {
     }
 
     function renderVirtualDom(vdom) {
-      let node = null;
+      var node = null;
 
       if(vdom[0] == "text") {
         node = document.createTextNode(vdom[2])
       } else {
         node = document.createElement(vdom[0]);
         for (var key in vdom[1]) {
-          const attributeValue = vdom[1][key];
+          var attributeValue = vdom[1][key];
           if(key == "on") {
             attributeValue.forEach(function(eventName) {
               node.addEventListener(eventName, function(e) {
@@ -52,7 +50,7 @@ module.exports = {
         }
 
         vdom[2].forEach(function(child) {
-          let childNode = renderVirtualDom(child);
+          var childNode = renderVirtualDom(child);
           node.appendChild(childNode);
         });
       }
@@ -67,31 +65,29 @@ module.exports = {
     }
 
     socket.addEventListener("message", (event) => {
-      const data = JSON.parse(event.data);
-      const patches = data.dom_patches;
-
-      console.log(data);
+      var data = JSON.parse(event.data);
+      var patches = data.dom_patches;
 
       patches.forEach(function(patch) {
         switch(patch[0]) {
           case "replace_node":
             {
-              const node = renderVirtualDom(patch[2]);
+              var node = renderVirtualDom(patch[2]);
               findNodeByPath(target, patch[1]).replaceWith(node);
             }
             break;
 
           case "add_node":
             {
-              const parent = findNodeByPath(target, patch[1]);
-              const node = renderVirtualDom(patch[2]);
+              var parent = findNodeByPath(target, patch[1]);
+              var node = renderVirtualDom(patch[2]);
               parent.appendChild(node);
             }
             break;
 
           case "set_attribute":
             {
-              let replaceTarget = findNodeByPath(target, patch[1]);
+              var replaceTarget = findNodeByPath(target, patch[1]);
               setAttribute(replaceTarget, patch[2][0], patch[2][1]);
             }
             break;
@@ -104,6 +100,6 @@ module.exports = {
         }
       });
     });
-
   }
-}
+
+})(typeof(exports) === "undefined" ? window.Whistle = window.Whistle || {} : exports);
