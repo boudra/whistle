@@ -9,7 +9,7 @@ defmodule Whistle.ProgramRepo do
     {:ok, state}
   end
 
-  def handle_call({:get_or_create, name, program, flags}, _from, programs) do
+  def handle_call({:ensure_started, name, program, flags}, _from, programs) do
     pid =
       Map.get_lazy(programs, name, fn ->
         {:ok, pid} =
@@ -21,11 +21,11 @@ defmodule Whistle.ProgramRepo do
         pid
       end)
 
-    {:reply, pid, Map.put(programs, name, pid)}
+    {:reply, {:ok, pid}, Map.put(programs, name, pid)}
   end
 
-  def get_or_create(name, program, flags) do
-    GenServer.call(__MODULE__, {:get_or_create, name, program, flags})
+  def ensure_started(name, program, flags) do
+    GenServer.call(__MODULE__, {:ensure_started, name, program, flags})
   end
 
 end

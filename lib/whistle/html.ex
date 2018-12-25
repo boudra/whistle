@@ -29,6 +29,10 @@ defmodule Whistle.Html do
     ~s(<#{tag} key="#{key}" #{attributes_to_string(attributes)}>#{children}</#{tag}>)
   end
 
+  def node(tag, attributes, child) when is_binary(child) do
+    node(tag, attributes, [text(child)])
+  end
+
   def node(tag, attributes, children) do
     children =
       children
@@ -62,6 +66,10 @@ defmodule Whistle.Html do
 
   def li(attributes, children) do
     node("li", attributes, children)
+  end
+
+  def strong(attributes, children) do
+    node("strong", attributes, children)
   end
 
   def br() do

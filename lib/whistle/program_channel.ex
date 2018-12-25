@@ -2,22 +2,21 @@ defmodule Whistle.ProgramChannel do
   use GenServer
 
   def init({name, program, flags}) do
-    {:ok, {name, program, program.init(flags)}}
+    {:ok, state} = program.init(name, flags)
+    {:ok, {name, program, state}}
   end
 
-  def handle_cast({:update, message}, {name, program, model}) do
-    new_model =
-      program.update(model, message)
+  def handle_call({:update, message, socket}, _from, {name, program, model}) do
+    {:ok, new_model, new_socket} =
+      program.update(message, model, socket)
 
     new_view =
-      {0, program.view(new_model)}
+      {0, program.view(new_model, socket)}
 
-    Phoenix.PubSub.broadcast(Whistle.PubSub, name, {:view, name, new_view})
-
-    {:noreply, {name, program, new_model}}
+    {:reply, {new_view, new_socket}, {name, program, new_model}}
   end
 
-  def handle_call(:view, _from, state = {name, program, model}) do
-    {:reply, {0, program.view(model)}, state}
+  def handle_call({:view, socket}, _from, state = {name, program, model}) do
+    {:reply, {0, program.view(model, socket)}, state}
   end
 end

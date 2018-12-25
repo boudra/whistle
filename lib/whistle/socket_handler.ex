@@ -1,26 +1,31 @@
 defmodule Whistle.SocketHandler do
   @behaviour :cowboy_websocket
 
+  alias Whistle.{ProgramRepo, Socket}
+
   def init(req, state) do
     {:cowboy_websocket, req, state}
   end
 
   def websocket_init({router, []}) do
     {:ok, %{
+      socket: %Socket{},
       router: router,
       channels: %{}
     }}
   end
 
-  def websocket_handle({:text, payload}, state = %{channels: channels}) do
+  def websocket_handle({:text, payload}, state = %{socket: socket, channels: channels}) do
     case Jason.decode(payload) do
       {:ok, %{"type" => "event", "channel" => channel, "handler" => handler, "arguments" => args}} ->
         handle(channel, {handler, args}, state)
 
       {:ok, %{"type" => "join", "channel" => channel, "params" => params}} ->
         channel_pid =
-          case state.router.join(channel, params) do
-            {:ok, pid} ->
+          case state.router.__route(channel) do
+            {:ok, program, init_params} ->
+              {:ok, new_socket} = program.authorize(channel, socket, params)
+              {:ok, pid} = ProgramRepo.ensure_started(channel, program, init_params)
               pid
           end
 
@@ -32,9 +37,9 @@ defmodule Whistle.SocketHandler do
 
         Phoenix.PubSub.subscribe(Whistle.PubSub, channel)
 
-        new_vdom = GenServer.call(channel_pid, :view)
+        new_vdom = GenServer.call(channel_pid, {:view, new_socket})
 
-        reply_render(channel, new_vdom, %{state | channels: Map.put(channels, channel, channel_info)})
+        reply_render(channel, new_vdom, %{state | socket: new_socket, channels: Map.put(channels, channel, channel_info)})
     end
   end
 
@@ -64,8 +69,11 @@ defmodule Whistle.SocketHandler do
     :ok
   end
 
-  def websocket_info({:view, channel, vdom}, state) do
-    reply_render(channel, vdom, state)
+  def websocket_info({:model_updated, channel}, state = %{socket: socket, channels: channels}) do
+    %{pid: pid} = Map.get(channels, channel)
+    new_vdom = GenServer.call(pid, {:view, socket})
+
+    reply_render(channel, new_vdom, state)
   end
 
   defp handle(channel, {handler, args}, state) do
@@ -84,12 +92,14 @@ defmodule Whistle.SocketHandler do
     update_model(channel, message, state)
   end
 
-  defp update_model(channel, message, state = %{channels: channels}) do
-    %{pid: pid} =
-      Map.get(channels, channel)
+  defp update_model(channel, message, state = %{socket: socket, channels: channels}) do
+    %{pid: pid} = Map.get(channels, channel)
 
-    GenServer.cast(pid, {:update, message})
+    {new_view, new_socket} =
+      GenServer.call(pid, {:update, message, socket})
 
-    {:ok, state}
+    Phoenix.PubSub.broadcast(Whistle.PubSub, channel, {:model_updated, channel})
+
+    reply_render(channel, new_view, %{state | socket: new_socket})
   end
 end
