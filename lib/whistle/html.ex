@@ -77,7 +77,7 @@ defmodule Whistle.Html do
   end
 
   def text(content) do
-    {:text, [], content}
+    {:text, [], Plug.HTML.html_escape(content)}
   end
 
 end
