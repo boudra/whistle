@@ -1,12 +1,10 @@
 (function(exports) {
-
   exports.connect = function(url) {
     var socket = new WebSocket(url);
     return socket;
   };
 
   exports.mount = function(socket, target, program, params) {
-
     socket.send(JSON.stringify({
       type: "join",
       channel: program,
