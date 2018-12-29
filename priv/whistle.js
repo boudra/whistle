@@ -7,7 +7,7 @@
   exports.mount = function(socket, target, program, params) {
     socket.send(JSON.stringify({
       type: "join",
-      channel: program,
+      program: program,
       params: params
     }));
 
@@ -36,7 +36,7 @@
               node.addEventListener(eventName, function(e) {
                 socket.send(JSON.stringify({
                   type: "event",
-                  channel: program,
+                  program: program,
                   handler: vdom[1].key + "." + eventName,
                   arguments: [e.target.value]
                 }));

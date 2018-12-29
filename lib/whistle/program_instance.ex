@@ -2,18 +2,23 @@ defmodule Whistle.ProgramInstance do
   use GenServer
 
   def init({name, program, params}) do
-    {:ok, state} = program.init(params)
-    {:ok, {name, program, state}}
+    case program.init(params) do
+      {:ok, state} ->
+        {:ok, {name, program, state}}
+
+      error = {:error, _} ->
+        error
+    end
   end
 
-  def handle_call({:update, message, socket}, _from, {name, program, model}) do
-    {:ok, new_model, new_socket} =
-      program.update(message, model, socket)
+  def handle_call({:update, message, session}, _from, state = {name, program, model}) do
+    case program.update(message, model, session) do
+      {:ok, new_model, new_session} ->
+        {:reply, {:ok, new_session}, {name, program, new_model}}
 
-    new_view =
-      {0, program.view(new_model, socket)}
-
-    {:reply, {new_view, new_socket}, {name, program, new_model}}
+      error = {:error, _} ->
+        {:reply, error, state}
+    end
   end
 
   def handle_call({:view, socket}, _from, state = {_name, program, model}) do

@@ -11,7 +11,7 @@ defmodule Whistle.Program do
   end
 
   @callback init(map()) :: {:ok, Whistle.state()}
-  @callback authorize(Whistle.state(), Socket.t(), map()) :: {:ok, Socket.t()} | {:error, any()}
-  @callback update(Whistle.message(), Whistle.state(), Socket.t()) :: {:ok, Whistle.state(), Socket.t()}
-  @callback view(Whistle.state(), Socket.t()) :: Whistle.Dom.t()
+  @callback authorize(Whistle.state(), Socket.t(), map()) :: {:ok, Socket.t(), Whistle.Session.t()} | {:error, any()}
+  @callback update(Whistle.message(), Whistle.state(), Socket.t()) :: {:ok, Whistle.state(), Whistle.Session.t()}
+  @callback view(Whistle.state(), Whistle.Session.t()) :: Whistle.Dom.t()
 end
