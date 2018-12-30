@@ -25,7 +25,7 @@ defmodule Whistle.ProgramConnection do
         {:ok, %{program | session: new_session}}
       catch
         :exit, value ->
-          {:ok, program}
+          {:error, :program_crash}
       end
     end
   end

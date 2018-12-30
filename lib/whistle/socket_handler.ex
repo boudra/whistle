@@ -64,12 +64,14 @@ defmodule Whistle.SocketHandler do
   end
 
   def websocket_info({:update, program_name, handler, args}, state = %{programs: programs}) do
-    IO.inspect {handler, args}
     program = Map.get(programs, program_name)
 
     case ProgramConnection.update(program, {handler, args}) do
       {:ok, new_program} ->
         {:ok, %{state | programs: Map.put(programs, program_name, new_program)}}
+
+      {:error, :program_crash} ->
+        {:ok, state}
     end
   end
 

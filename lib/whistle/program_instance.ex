@@ -9,6 +9,7 @@ defmodule Whistle.ProgramInstance do
 
   def init({name, program, params}) do
     ProgramRegistry.register(name, self())
+    ProgramRegistry.broadcast(name, {:updated, name})
 
     case program.init(params) do
       {:ok, state} ->
