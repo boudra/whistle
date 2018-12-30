@@ -8,7 +8,7 @@ defmodule Whistle.Application do
 
     children = [
       supervisor(Phoenix.PubSub.PG2, [Whistle.PubSub, []]),
-      worker(Whistle.ProgramRegistry, [Whistle.ProgramRegistry])
+      supervisor(Whistle.ProgramRegistry, [Whistle.ProgramRegistry])
     ] ++ http_server(@http_server)
 
     opts = [strategy: :one_for_one, name: MyApp.Supervisor]

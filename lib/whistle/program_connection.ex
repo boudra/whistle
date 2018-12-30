@@ -1,5 +1,8 @@
 defmodule Whistle.ProgramConnection do
-  defstruct name: nil, pid: nil, vdom: nil, handlers: %{}, session: %{}
+
+  alias Whistle.ProgramRegistry
+
+  defstruct name: nil, vdom: nil, handlers: %{}, session: %{}
 
   defp handler_message(%{handlers: handlers}, name, args) do
     case Map.get(handlers, name) do
@@ -14,11 +17,16 @@ defmodule Whistle.ProgramConnection do
     end
   end
 
-  def update(program = %{name: name, pid: pid, session: session}, {handler, args}) do
+  def update(program = %{name: name, session: session}, {handler, args}) do
     with {:ok, message} <- handler_message(program, handler, args),
-         {:ok, new_session} <- GenServer.call(pid, {:update, message, session}),
-         :ok <- Phoenix.PubSub.broadcast(Whistle.PubSub, name, {:updated, name}) do
-      {:ok, %{program | session: new_session}}
+         {:ok, pid} <- ProgramRegistry.pid(name) do
+      try do
+        {:ok, new_session} = GenServer.call(pid, {:update, message, session})
+        {:ok, %{program | session: new_session}}
+      catch
+        :exit, value ->
+          {:ok, program}
+      end
     end
   end
 
