@@ -72,6 +72,10 @@ defmodule Whistle.Html do
     node("strong", attributes, children)
   end
 
+  def form(attributes, children) do
+    node("form", attributes, children)
+  end
+
   def br() do
     node("br", [], [])
   end

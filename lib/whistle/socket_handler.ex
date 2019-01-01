@@ -38,6 +38,7 @@ defmodule Whistle.SocketHandler do
              :ok <- ProgramRegistry.subscribe(program_name, self()) do
 
           program_connection = %ProgramConnection{
+            pid: pid,
             name: program_name,
             vdom: nil,
             handlers: %{},
@@ -53,14 +54,30 @@ defmodule Whistle.SocketHandler do
 
   def terminate(reason, _req, %{socket: socket, programs: programs}) do
     IO.inspect {:terminating, reason}
-    Enum.each(programs, fn {_, %{name: name, session: session}} ->
-      case ProgramRegistry.pid(name) do
-        {:ok, pid} ->
-          send(pid, {:disconnected, socket, session})
-      end
+    Enum.each(programs, fn
+      {_, %{pid: nil}} ->
+        nil
+
+      {_, %{pid: pid, name: name, session: session}} ->
+        send(pid, {:disconnected, socket, session})
     end)
 
     :ok
+  end
+
+  def websocket_info({:program_terminating, program_name, _reason}, state = %{programs: programs}) do
+    program = Map.get(programs, program_name)
+    new_program = %{program | pid: nil}
+
+    {:ok, %{state | programs: Map.put(programs, program_name, new_program)}}
+  end
+
+  def websocket_info({:program_started, program_name, pid}, state = %{socket: socket, programs: programs}) do
+    program = Map.get(programs, program_name)
+    new_program = %{program | pid: pid}
+    send(pid, {:connected, socket, program.session})
+
+    reply_program_view(%{state | programs: Map.put(programs, program_name, new_program)}, new_program)
   end
 
   def websocket_info({:update, program_name, handler, args}, state = %{programs: programs}) do
@@ -85,9 +102,7 @@ defmodule Whistle.SocketHandler do
     end
   end
 
-  defp reply_program_view(state = %{programs: programs}, program = %{name: name, session: session}) do
-    {:ok, pid} = ProgramRegistry.pid(name)
-
+  defp reply_program_view(state = %{programs: programs}, program = %{pid: pid, name: name, session: session}) do
     new_vdom = GenServer.call(pid, {:view, session})
     {new_program, vdom_diff} = ProgramConnection.put_new_vdom(program, new_vdom)
     response =

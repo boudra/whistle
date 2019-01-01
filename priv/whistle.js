@@ -17,6 +17,14 @@
         node.value = value;
       } else if (key == "checked") {
         node.checked = value;
+      } else if (key == "required") {
+        node.required = value;
+      } else if (key == "scroll_top") {
+        if(value == "bottom") {
+          node.scrollTop = node.scrollHeight;
+        } else {
+          node.scrollTop = value;
+        }
       } else{
         node.setAttribute(key, value);
       }
@@ -34,6 +42,8 @@
           if(key == "on") {
             attributeValue.forEach(function(eventName) {
               node.addEventListener(eventName, function(e) {
+                e.preventDefault();
+
                 socket.send(JSON.stringify({
                   type: "event",
                   program: program,
@@ -65,6 +75,8 @@
     socket.addEventListener("message", (event) => {
       var data = JSON.parse(event.data);
       var patches = data.dom_patches;
+
+      console.log(patches);
 
       patches.forEach(function(patch) {
         switch(patch[0]) {

@@ -9,7 +9,7 @@ defmodule Whistle.ProgramInstance do
 
   def init({name, program, params}) do
     ProgramRegistry.register(name, self())
-    ProgramRegistry.broadcast(name, {:updated, name})
+    ProgramRegistry.broadcast(name, {:program_started, name, self()})
 
     case program.init(params) do
       {:ok, state} ->
@@ -18,6 +18,10 @@ defmodule Whistle.ProgramInstance do
       error = {:error, _} ->
         error
     end
+  end
+
+  def terminate(reason, {name, _, _}) do
+    ProgramRegistry.broadcast(name, {:program_terminating, name, reason})
   end
 
   def handle_call({:update, message, session}, _from, state = {name, program, model}) do

@@ -2,7 +2,7 @@ defmodule Whistle.ProgramConnection do
 
   alias Whistle.ProgramRegistry
 
-  defstruct name: nil, vdom: nil, handlers: %{}, session: %{}
+  defstruct pid: nil, name: nil, vdom: nil, handlers: %{}, session: %{}
 
   defp handler_message(%{handlers: handlers}, name, args) do
     case Map.get(handlers, name) do
@@ -17,9 +17,8 @@ defmodule Whistle.ProgramConnection do
     end
   end
 
-  def update(program = %{name: name, session: session}, {handler, args}) do
-    with {:ok, message} <- handler_message(program, handler, args),
-         {:ok, pid} <- ProgramRegistry.pid(name) do
+  def update(program = %{pid: pid, name: name, session: session}, {handler, args}) do
+    with {:ok, message} <- handler_message(program, handler, args) do
       try do
         {:ok, new_session} = GenServer.call(pid, {:update, message, session})
         {:ok, %{program | session: new_session}}
