@@ -63,13 +63,23 @@ defmodule Whistle.Dom do
     )
   end
 
-  def diff(_path, nil, nil) do
+  def diff(element1, element2) do
+    diff([], {0, element1}, {0, element2})
+  end
+
+  def diff(_path, {_, nil}, {_, nil}) do
     []
   end
 
-  def diff(path, nil, {key, new_node}) do
+  def diff(path, {_, nil}, {key, new_node}) do
     [
       {:add_node, path, {key, new_node}}
+    ]
+  end
+
+  def diff(path, {key, node}, {key, nil}) do
+    [
+      {:remove_node, path ++ [key], []}
     ]
   end
 
