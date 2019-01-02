@@ -61,7 +61,11 @@ defmodule Whistle.ProgramInstance do
 
   def handle_info(message, state = {name, program, model}) do
     case program.handle_info(message, model) do
+      {:ok, ^model} ->
+        {:noreply, {name, program, model}}
+
       {:ok, new_model} ->
+        ProgramRegistry.broadcast(name, {:updated, name})
         {:noreply, {name, program, new_model}}
 
       {:error, _} ->
