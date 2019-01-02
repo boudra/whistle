@@ -6,8 +6,8 @@ defmodule Whistle.Dom do
   end
 
   defp zip([], []), do: []
-  defp zip([lh | lt], []), do: zip([lh | lt], [nil])
-  defp zip([], [rh | rt]), do: zip([nil], [rh | rt])
+  defp zip([lh = {key, _} | lt], []), do: zip([lh | lt], [{key, nil}])
+  defp zip([], [rh = {key, _} | rt]), do: zip([{key, nil}], [rh | rt])
 
   def diff_text({key, {:text, [], text}}, {key, {:text, [], text}}) do
     []
@@ -71,6 +71,20 @@ defmodule Whistle.Dom do
     []
   end
 
+  def diff(path, {_, nil}, {key, {:lazy, fun, args}}) do
+    [
+      {:add_node, path, {key, apply(fun, args)}}
+    ]
+  end
+
+  def diff(path, {key, {:lazy, fun, args}}, {key, {:lazy, fun, args}}) do
+    []
+  end
+
+  def diff(path, {key, {:lazy, fun, args}}, {key, {:lazy, new_fun, new_args}}) do
+    diff(path, {key, apply(fun, args)}, {key, apply(new_fun, new_args)})
+  end
+
   def diff(path, {_, nil}, {key, new_node}) do
     [
       {:add_node, path, {key, new_node}}
@@ -100,22 +114,38 @@ defmodule Whistle.Dom do
     end)
   end
 
+  defp prevent_default(:click), do: true
+  defp prevent_default(:submit), do: true
+  defp prevent_default(_), do: false
+
+  defp build_event_handler(handler) do
+    prevent_default = prevent_default(Keyword.get(handler, :prevent_default))
+
+    handler
+    |> Map.new()
+    |> Map.put_new(:prevent_default, prevent_default)
+    |> Map.put_new(:stop_propagation, false)
+  end
+
   def extract_event_handlers(path, {key, {_, attributes, children}}) do
     key = path ++ [key]
     string_key = Enum.join(key, ".")
 
     handlers =
       attributes
-      |> Keyword.get(:on)
-      |> case do
-        nil ->
-          []
+      |> Keyword.get_values(:on)
+      |> Enum.reduce([], fn handlers, acc ->
+        Enum.map(handlers, fn
+          handler when is_list(handler) ->
+            type = Keyword.get(handler, :event)
 
-        handlers ->
-          Enum.map(handlers, fn {type, msg} ->
-            {string_key <> "." <> Atom.to_string(type), msg}
-          end)
-      end
+            {string_key <> "." <> to_string(type), build_event_handler(handler)}
+
+          {type, msg} ->
+            {string_key <> "." <> to_string(type),
+             build_event_handler(event: type, msg: msg)}
+        end) ++ acc
+      end)
 
     child_handlers =
       if is_list(children) do
@@ -129,6 +159,10 @@ defmodule Whistle.Dom do
     handlers ++ child_handlers
   end
 
+  def serialize_virtual_dom(path, {key, {:lazy, fun, args}}) do
+    serialize_virtual_dom(path, {key, apply(fun, args)})
+  end
+
   def serialize_virtual_dom(path, {key, {tag, attributes, children}}) do
     key = path ++ [key]
 
@@ -138,6 +172,9 @@ defmodule Whistle.Dom do
       |> Enum.map(fn
         {:on, handlers} ->
           {"on", Keyword.keys(handlers)}
+
+        {:hook, hook} ->
+          {"data-hook", hook}
 
         {k, v} ->
           {Atom.to_string(k), v}

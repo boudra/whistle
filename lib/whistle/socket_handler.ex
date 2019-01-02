@@ -40,7 +40,6 @@ defmodule Whistle.SocketHandler do
           program_connection = %ProgramConnection{
             pid: pid,
             name: program_name,
-            vdom: nil,
             handlers: %{},
             session: session
           }

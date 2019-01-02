@@ -2,7 +2,7 @@ defmodule Whistle.ProgramConnection do
 
   alias Whistle.ProgramRegistry
 
-  defstruct pid: nil, name: nil, vdom: nil, handlers: %{}, session: %{}
+  defstruct pid: nil, name: nil, vdom: {0, nil}, handlers: %{}, session: %{}
 
   defp handler_message(%{handlers: handlers}, name, args) do
     case Map.get(handlers, name) do
@@ -43,6 +43,7 @@ defmodule Whistle.ProgramConnection do
       []
       |> Whistle.Dom.extract_event_handlers(new_vdom)
       |> Enum.into(%{})
+      |> IO.inspect()
 
     vdom_diff =
       Whistle.Dom.diff([], vdom, new_vdom)
