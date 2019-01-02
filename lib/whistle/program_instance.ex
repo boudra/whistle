@@ -25,6 +25,8 @@ defmodule Whistle.ProgramInstance do
   end
 
   def handle_call({:update, message, session}, _from, state = {name, program, model}) do
+    IEx.Helpers.r(program)
+
     case program.update(message, model, session) do
       {:ok, new_model, new_session} ->
         ProgramRegistry.broadcast(name, {:updated, name})
@@ -36,6 +38,8 @@ defmodule Whistle.ProgramInstance do
   end
 
   def handle_call({:view, socket}, _from, state = {_name, program, model}) do
+    IEx.Helpers.r(program)
+
     {:reply, {0, program.view(model, socket)}, state}
   end
 
