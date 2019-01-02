@@ -81,7 +81,11 @@ defmodule Whistle.Html do
   end
 
   def text(content) do
-    {:text, [], Plug.HTML.html_escape(content)}
+    {:text, [], content}
+  end
+
+  def lazy(fun, args) do
+    {:lazy, fun, args}
   end
 
 end
