@@ -416,6 +416,10 @@ defmodule Whistle.Dom do
       |> Enum.map(&__MODULE__.to_string/1)
       |> Enum.join("")
 
-    ~s(<#{tag} #{attributes_to_string(attributes)}>#{children}</#{tag}>)
+    if tag in ["input", "br"] and children == "" do
+      ~s(<#{tag} #{attributes_to_string(attributes)} />)
+    else
+      ~s(<#{tag} #{attributes_to_string(attributes)}>#{children}</#{tag}>)
+    end
   end
 end
