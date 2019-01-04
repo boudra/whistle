@@ -4,47 +4,62 @@ defmodule DomTest do
 
   alias Whistle.{Html, Dom}
 
+  # patch operation codes
+  # TODO: macro to import these from the Dom module
+  @replace_text 1
+  @add_node 2
+  @replace_node 3
+  @remove_node 4
+  @set_attribute 5
+  @remove_attribute 6
+  @add_event_handler 7
+  @remove_event_handler 8
+
+  def diff_patches(node1, node2) do
+    Dom.diff(node1, node2).patches
+  end
+
   test "html helpers" do
     assert Html.p([], []) == Html.node("p", [], [])
     assert Html.p([], []) == {"p", [], []}
     assert Html.p([class: "class"], []) == {"p", [class: "class"], []}
 
     assert Html.p([class: "class"], "some text") ==
-             {"p", [class: "class"], [{0, {:text, [], "some text"}}]}
+             {"p", [class: "class"], [{0, "some text"}]}
 
     assert Html.p([class: "class"], [Html.text("some text")]) ==
              Html.p([class: "class"], "some text")
   end
 
   test "dom diff" do
-    assert Dom.diff(Html.p([id: "id"], []), Html.p([id: "id"], [])) == []
+    assert diff_patches(Html.p([id: "id"], []), Html.p([id: "id"], [])) == []
 
-    assert Dom.diff(Html.p([id: "id"], []), Html.p([id: "new_id"], [])) == [
-             {:set_attribute, [0], [:id, "new_id"]}
+    assert diff_patches(Html.p([id: "id"], []), Html.p([id: "new_id"], [])) == [
+             [@set_attribute, [0], [:id, "new_id"]]
            ]
 
-    assert Dom.diff(Html.p([], []), Html.p([id: "new_id"], [])) == [
-             {:set_attribute, [0], [:id, "new_id"]}
+    assert diff_patches(Html.p([], []), Html.p([id: "new_id"], [])) == [
+             [@set_attribute, [0], [:id, "new_id"]]
            ]
 
-    assert Dom.diff(Html.p([id: "id"], []), Html.p([], [])) == [
-             {:remove_attribute, [0], :id}
+    assert diff_patches(Html.p([id: "id"], []), Html.p([], [])) == [
+             [@remove_attribute, [0], :id]
            ]
 
-    assert Dom.diff(nil, Html.p([id: "id"], [])) == [
-             {:add_node, [], {0, Html.p([id: "id"], [])}}
+    assert diff_patches(nil, Html.p([id: "id"], [])) == [
+             [@add_node, [], ["p", %{"id" => "id"}, []]]
            ]
 
-    assert Dom.diff(Html.p([id: "id"], []), Html.div([id: "div"], [])) == [
-             {:replace_node, [0], Html.div([id: "div"], [])}
+    assert diff_patches(Html.p([id: "id"], []), Html.div([id: "div"], [])) == [
+             [@replace_node, [0], ["div", %{"id" => "div"}, []]]
            ]
 
-    assert Dom.diff(Html.p([id: "id"], []), nil) == [
-             {:remove_node, [0], []}
+    assert diff_patches(Html.p([id: "id"], []), nil) == [
+             [@remove_node, [0], []]
            ]
 
-    assert Dom.diff(Html.p([id: "id"], [Html.text("")]), Html.p([id: "id"], [])) == [
-             {:remove_node, [0, 0], []}
+    assert diff_patches(Html.p([id: "id"], [Html.text("")]), Html.p([id: "id"], [])) == [
+             [@remove_node, [0, 0], []]
            ]
   end
 
@@ -54,7 +69,7 @@ defmodule DomTest do
         raise text
       end
 
-      assert Dom.diff(
+      assert diff_patches(
                Html.lazy(fun, ["hello"]),
                Html.lazy(fun, ["hello"])
              ) == []
@@ -65,22 +80,45 @@ defmodule DomTest do
         Html.text(text)
       end
 
-      assert Dom.diff(
+      assert diff_patches(
                Html.lazy(fun, ["hello"]),
                Html.lazy(fun, ["hello world"])
-             ) == [{:replace_text, [0], "hello world"}]
+             ) == [[@replace_node, [0], "hello world"]]
     end
   end
 
-  test "one pass diff" do
-    fun = fn text ->
-      Html.p([on: [click: text, test: ""]], text)
+  describe "event handlers" do
+    test "get added when new" do
+      node =
+        Html.p([on: [click: "something"]], "test")
+
+      assert %{
+        handlers: [
+          {:put, "0.click", %{msg: "something"}}
+        ],
+        patches: [
+          [@add_node|_],
+          [@add_event_handler, [0], _]
+        ]
+      } = Dom.diff(nil, node)
     end
 
-    Dom.diff(nil, Html.lazy(fun, ["hello"]))
-    |> IO.inspect()
-    |> Map.put(:patches, [])
-    |> Dom.diff(Html.lazy(fun, ["hello"]), Html.lazy(fun, ["hello2"]))
-    |> IO.inspect()
+    test "get changed" do
+      node =
+        Html.p([on: [click: "something"]], "test")
+
+      node2 =
+        Html.p([on: [click: "something else"]], "test")
+
+      assert %{
+        handlers: [
+          {:put, "0.click", %{msg: "something else"}}
+        ],
+        patches: [
+          [@remove_event_handler, [0], :click],
+          [@add_event_handler, [0], %{event: :click}]
+        ]
+      } = Dom.diff(node, node2)
+    end
   end
 end

@@ -1,7 +1,7 @@
 defmodule Whistle.Html do
 
-  def node(tag, attributes, child) when is_binary(child) do
-    node(tag, attributes, [text(child)])
+  def node(tag, attributes, text) when is_binary(text) do
+    node(tag, attributes, [text])
   end
 
   def node(tag, attributes, children) do
@@ -52,7 +52,7 @@ defmodule Whistle.Html do
   end
 
   def text(content) do
-    {:text, [], content}
+    to_string(content)
   end
 
   def lazy(fun, args) do

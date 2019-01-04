@@ -26,7 +26,7 @@ defmodule Whistle.Program do
          {:ok, new_socket, session} <-
            GenServer.call(pid, {:authorize, %{}, Map.merge(program_params, params)}) do
       new_vdom = GenServer.call(pid, {:view, session})
-      Whistle.Dom.to_string(new_vdom)
+      Whistle.Dom.node_to_string(new_vdom)
     end
   end
 

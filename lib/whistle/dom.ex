@@ -1,8 +1,11 @@
 defmodule Whistle.Dom do
   @type t() :: tuple()
 
+  defmodule Diff do
+    defstruct lazy_trees: %{}, patches: [], handlers: []
+  end
+
   # patch operation codes
-  @replace_text 1
   @add_node 2
   @replace_node 3
   @remove_node 4
@@ -11,24 +14,81 @@ defmodule Whistle.Dom do
   @add_event_handler 7
   @remove_event_handler 8
 
-  defp zip([lh | lt], [rh | rt]) do
-    [{lh, rh} | zip(lt, rt)]
+  def diff(element1, element2) do
+    state = %Diff{}
+
+    diff(state, [], {0, element1}, {0, element2})
   end
 
-  defp zip([], []), do: []
-  defp zip([lh = {key, _} | lt], []), do: zip([lh | lt], [{key, nil}])
-  defp zip([], [rh = {key, _} | rt]), do: zip([{key, nil}], [rh | rt])
+  def diff(trees, node1 = {0, _}, node2 = {0, _}) do
+    diff(%Diff{lazy_trees: trees}, [], node1, node2)
+  end
 
-  def diff_text(state, path, {key, {:text, [], text}}, {key, {:text, [], text}}) do
+  def diff(trees, node1, node2) do
+    diff(%Diff{lazy_trees: trees}, [], {0, node1}, {0, node2})
+  end
+
+  def diff(state, _path, {_, nil}, {_, nil}) do
     state
   end
 
-  def diff_text(state, path, {key, {:text, [], _}}, {key, {:text, [], text2}}) do
-    add_patches(state, [[@replace_text, path ++ [key], text2]])
+  def diff(state, path, {_, nil}, {key, {:lazy, fun, args}}) do
+    new_node = apply(fun, args)
+
+    state
+    |> put_lazy_tree({fun, args}, new_node)
+    |> add_node(path, key, new_node)
   end
 
-  def diff_text(state, path, {key, _}, {key, _}) do
+  def diff(
+        state = %{lazy_trees: tree},
+        path,
+        {key, {:lazy, fun, args}},
+        {key, {:lazy, new_fun, new_args}}
+      ) do
+    if fun === new_fun and args === new_args do
+      state
+    else
+      new_node = apply(new_fun, new_args)
+
+      case Map.get(tree, {fun, args}) do
+        nil ->
+          replace_node(state, path, key, new_node)
+
+        old_node ->
+          state
+          |> put_lazy_tree({fun, args}, new_node)
+          |> diff(path, {key, old_node}, {key, new_node})
+      end
+    end
+  end
+
+  def diff(state, path, {_, nil}, {key, new_node}) do
+    add_node(state, path, key, new_node)
+  end
+
+  # TODO: create @remove_event_handler patches for the DOM
+  def diff(state, path, {key, node}, {key, nil}) do
+    add_patches(state, [[@remove_node, path ++ [key], []]])
+  end
+
+  def diff(state, path, {key, {tag, _, _}}, {key, new_node = {new_tag, _, _}})
+      when tag != new_tag do
+    replace_node(state, path, key, new_node)
+  end
+
+  def diff(state, path, {key, node}, {key, node}) do
     state
+  end
+
+  def diff(state, path, {key, old_node}, {key, new_node}) when is_binary(new_node) do
+    replace_node(state, path, key, new_node)
+  end
+
+  def diff(state, path, node1, node2) do
+    state
+    |> diff_attributes(path, node1, node2)
+    |> diff_children(path, node1, node2)
   end
 
   def diff_children(state, path, {key, {_, _, children}}, {key, {_, _, new_children}})
@@ -122,7 +182,7 @@ defmodule Whistle.Dom do
             acc
 
           {_, nil} ->
-            new_handlers = Map.delete(handlers, handler_id)
+            new_handlers = handlers ++ [{:delete, handler_id}]
 
             {new_handlers,
              patches ++
@@ -131,7 +191,7 @@ defmodule Whistle.Dom do
                ]}
 
           {nil, new_value} ->
-            new_handlers = Map.put(handlers, handler_id, new_value)
+            new_handlers = handlers ++ [{:put, handler_id, new_value}]
 
             {new_handlers,
              patches ++
@@ -140,10 +200,7 @@ defmodule Whistle.Dom do
                ]}
 
           {_, new_value} ->
-            new_handlers =
-              handlers
-              |> Map.delete(handler_id)
-              |> Map.put(handler_id, new_value)
+            new_handlers = handlers ++ [{:put, handler_id, new_value}]
 
             {new_handlers,
              patches ++
@@ -168,94 +225,50 @@ defmodule Whistle.Dom do
   end
 
   defp add_handlers(state = %{handlers: handlers}, new_handlers) do
-    %{state | handlers: Map.merge(handlers, new_handlers)}
+    %{state | handlers: handlers ++ new_handlers}
+  end
+
+  defp add_node(state, path, key, node) when is_binary(node) do
+    add_patches(state, [[@add_node, path, node]])
   end
 
   defp add_node(state = %{handlers: handlers}, path, key, node) do
     keyed_node = {key, node}
 
-    {new_handlers, node_without_handlers} = extract_event_handlers(handlers, path, keyed_node)
+    {new_handlers, node_without_handlers} = extract_event_handlers(path, keyed_node)
 
-    serialized_node = serialize_virtual_dom(state, path, node_without_handlers)
+    encoded_node = encode_node(state, path, node_without_handlers)
 
     handler_patches =
-      Enum.map(new_handlers, fn {_, handler} ->
+      Enum.map(new_handlers, fn {:put, _, handler} ->
         [@add_event_handler, handler.key, Map.drop(handler, [:msg, :key])]
       end)
 
     state
-    |> add_patches([[@add_node, path, serialized_node] | handler_patches])
+    |> add_patches([[@add_node, path, encoded_node] | handler_patches])
     |> add_handlers(new_handlers)
   end
 
-  def diff(element1, element2) do
-    state = %{
-      lazy_trees: %{},
-      patches: [],
-      handlers: %{}
-    }
-
-    diff(state, [], {0, element1}, {0, element2})
+  defp replace_node(state, path, key, node) when is_binary(node) do
+    add_patches(state, [[@replace_node, path ++ [key], node]])
   end
 
-  def diff(state, element1, element2) do
-    diff(state, [], element1, element2)
-  end
+  # TODO: create @remove_event_handler patches for the DOM
+  defp replace_node(state = %{handlers: handlers}, path, key, node) do
+    keyed_node = {key, node}
 
-  def diff(state, _path, {_, nil}, {_, nil}) do
-    state
-  end
+    {new_handlers, node_without_handlers} = extract_event_handlers(path, keyed_node)
 
-  def diff(state, path, {_, nil}, {key, {:lazy, fun, args}}) do
-    new_node = apply(fun, args)
+    encoded_node = encode_node(state, path, node_without_handlers)
+
+    handler_patches =
+      Enum.map(new_handlers, fn {:put, _, handler} ->
+        [@add_event_handler, handler.key, Map.drop(handler, [:msg, :key])]
+      end)
 
     state
-    |> put_lazy_tree({fun, args}, new_node)
-    |> add_node(path, key, new_node)
-  end
-
-  def diff(
-        state = %{lazy_trees: tree},
-        path,
-        {key, {:lazy, fun, args}},
-        {key, {:lazy, new_fun, new_args}}
-      ) do
-    if fun === new_fun and args === new_args do
-      state
-    else
-      new_node = apply(new_fun, new_args)
-
-      case Map.get(tree, {fun, args}) do
-        nil ->
-          state
-          |> add_patches([[@replace_node, path ++ [key], new_node]])
-
-        old_node ->
-          state
-          |> put_lazy_tree({fun, args}, new_node)
-          |> diff(path, {key, old_node}, {key, new_node})
-      end
-    end
-  end
-
-  def diff(state, path, {_, nil}, {key, new_node}) do
-    add_node(state, path, key, new_node)
-  end
-
-  def diff(state, path, {key, node}, {key, nil}) do
-    add_patches(state, [[@remove_node, path ++ [key], []]])
-  end
-
-  def diff(state, path, {key, {tag, _, _}}, {key, new_node = {new_tag, _, _}})
-      when tag != new_tag do
-    add_patches(state, [[@replace_node, path ++ [key], new_node]])
-  end
-
-  def diff(state, path, node1, node2) do
-    state
-    |> diff_attributes(path, node1, node2)
-    |> diff_text(path, node1, node2)
-    |> diff_children(path, node1, node2)
+    |> add_patches([[@replace_node, path ++ [key], encoded_node] | handler_patches])
+    |> add_handlers(new_handlers)
   end
 
   defp prevent_default(:click), do: true
@@ -285,62 +298,59 @@ defmodule Whistle.Dom do
     |> Map.put(:key, key)
   end
 
-  def extract_event_handlers(handlers, path, {key, {tag, attributes, children}}) do
+  def extract_event_handlers(_path, node = {_key, text}) when is_binary(text) do
+    {[], node}
+  end
+
+  def extract_event_handlers(path, {key, {tag, attributes, children}}) do
     full_key = path ++ [key]
     string_key = Enum.join(full_key, ".")
 
-    new_handlers =
+    node_handlers =
       attributes
       |> Keyword.get_values(:on)
       |> Enum.reduce([], fn handlers, acc ->
-        Enum.map(handlers, fn handler ->
-          handler = build_event_handler(handler, full_key)
+        acc ++
+          Enum.map(handlers, fn handler ->
+            handler = build_event_handler(handler, full_key)
 
-          type = Map.get(handler, :event)
+            type = Map.get(handler, :event)
 
-          {string_key <> "." <> Kernel.to_string(type), handler}
-        end) ++ acc
+            {:put, string_key <> "." <> Kernel.to_string(type), handler}
+          end)
       end)
-      |> Map.new()
 
     new_attributes = Keyword.delete(attributes, :on)
 
-    {child_handlers, new_children} =
-      if is_list(children) do
-        Enum.reduce(children, {%{}, []}, fn node, {handlers, children} ->
-          {new_handlers, child} = extract_event_handlers(handlers, full_key, node)
-          {new_handlers, children ++ [child]}
-        end)
-      else
-        {%{}, children}
-      end
+    {all_handlers, new_children} =
+      Enum.reduce(children, {node_handlers, []}, fn node, {handlers, children} ->
+        {child_handlers, child} = extract_event_handlers(full_key, node)
+        {handlers ++ child_handlers, children ++ [child]}
+      end)
 
-    {Map.merge(new_handlers, child_handlers), {key, {tag, new_attributes, new_children}}}
+    {all_handlers, {key, {tag, new_attributes, new_children}}}
   end
 
-  def serialize_virtual_dom(state, path, {key, {:lazy, fun, args}}) do
-    serialize_virtual_dom(state, path, {key, Map.get(state.lazy_trees, {fun, args})})
+  def encode_node(state, path, {key, text}) when is_binary(text) do
+    text
   end
 
-  def serialize_virtual_dom(state, path, {key, {tag, attributes, children}}) do
+  def encode_node(state, path, {key, {:lazy, fun, args}}) do
+    encode_node(state, path, {key, Map.get(state.lazy_trees, {fun, args})})
+  end
+
+  def encode_node(state, path, {key, {tag, attributes, children}}) do
     key = path ++ [key]
 
     attributes =
       attributes
-      |> Enum.concat(key: Enum.join(key, "."))
-      |> Enum.map(fn
-        {:hook, hook} ->
-          {"data-hook", hook}
-
-        {k, v} ->
-          {Atom.to_string(k), v}
-      end)
+      |> Enum.map(fn{k, v} -> {Atom.to_string(k), v} end)
       |> Enum.into(%{})
 
     children =
       if is_list(children) do
         Enum.map(children, fn node ->
-          serialize_virtual_dom(state, key, node)
+          encode_node(state, key, node)
         end)
       else
         children
@@ -402,18 +412,18 @@ defmodule Whistle.Dom do
     |> Enum.join(" ")
   end
 
-  def to_string(node = {_, _, _}) do
-    __MODULE__.to_string({0, node})
+  def node_to_string(node = {_, _, _}) do
+    node_to_string({0, node})
   end
 
-  def to_string({_, {:text, [], content}}) do
-    content
+  def node_to_string({_, text}) when is_binary(text) do
+    to_string(text)
   end
 
-  def to_string({key, {tag, attributes, children}}) do
+  def node_to_string({key, {tag, attributes, children}}) do
     children =
       children
-      |> Enum.map(&__MODULE__.to_string/1)
+      |> Enum.map(&node_to_string/1)
       |> Enum.join("")
 
     if tag in ["input", "br"] and children == "" do
@@ -422,4 +432,12 @@ defmodule Whistle.Dom do
       ~s(<#{tag} #{attributes_to_string(attributes)}>#{children}</#{tag}>)
     end
   end
+
+  defp zip([lh | lt], [rh | rt]) do
+    [{lh, rh} | zip(lt, rt)]
+  end
+
+  defp zip([], []), do: []
+  defp zip([lh = {key, _} | lt], []), do: zip([lh | lt], [{key, nil}])
+  defp zip([], [rh = {key, _} | rt]), do: zip([{key, nil}], [rh | rt])
 end
