@@ -324,6 +324,10 @@
         self.connect(self.websocketOpts);
       }, self.connectionRetries * 200);
     });
+
+    this.on("connect", function() {
+      self.connectionRetries = 0;
+    });
   }
 
   function debounceInputEvent(func, wait) {
