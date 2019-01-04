@@ -105,13 +105,19 @@ defmodule Whistle.SocketHandler do
   defp reply_program_view(state = %{programs: programs}, program = %{pid: pid, name: name, session: session}) do
     new_vdom = GenServer.call(pid, {:view, session})
     {new_program, vdom_diff} = ProgramConnection.put_new_vdom(program, new_vdom)
-    response =
-      @json_library.encode!(%{
-        type: "render",
-        program: name,
-        dom_patches: vdom_diff
-      })
+    new_state = %{state | programs: Map.put(programs, name, new_program)}
 
-    {:reply, {:text, response}, %{state | programs: Map.put(programs, name, new_program)}}
+    if length(vdom_diff) > 0 do
+      response =
+        @json_library.encode!(%{
+          type: "render",
+          program: name,
+          dom_patches: vdom_diff
+        })
+
+      {:reply, {:text, response}, new_state}
+    else
+      {:ok, new_state}
+    end
   end
 end

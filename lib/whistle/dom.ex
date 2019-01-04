@@ -389,6 +389,13 @@ defmodule Whistle.Dom do
     |> Enum.map(fn
       {:on, _} ->
         ""
+
+      {:value, _} ->
+        ""
+
+      {:required, _} ->
+        ""
+
       {key, value} ->
         ~s(#{key}="#{value}")
     end)

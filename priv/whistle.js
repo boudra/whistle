@@ -233,7 +233,7 @@
     var self = this;
 
     this.programs = [];
-    this.connectionRetries = 0;
+    this.connectionRetries = 1;
     this.eventListeners = {
       connect: [],
       disconnect: [],
@@ -241,15 +241,13 @@
     };
 
     function websocketOnOpen(e) {
-      console.log("connected");
       self.eventListeners["connect"].forEach(function(fun) {
         fun.call(self, e);
       });
     }
 
     function websocketOnClose(e) {
-      console.log("disconnected");
-      self.eventListeners["connect"].forEach(function(fun) {
+      self.eventListeners["disconnect"].forEach(function(fun) {
         fun(e);
       });
     }
@@ -277,8 +275,6 @@
     this.connect = function(opts) {
       var websocket = new WebSocket(opts);
 
-      console.log("connecting");
-
       this.websocketOpts = opts;
       this.setWebsocket(websocket);
     }
@@ -287,7 +283,6 @@
       this.eventListeners["message"].push(function(e) {
         var data = JSON.parse(e.data);
         if(data.program == program) {
-          console.log("receive", data);
           fun.call(self, data);
         }
       });
@@ -299,7 +294,6 @@
     };
 
     this.send = function(data) {
-      console.log("send", data);
       this.websocket.send(JSON.stringify(data));
     }
 
@@ -323,10 +317,12 @@
     }
 
     this.on("disconnect", function() {
+      self.eventListeners["message"] = [];
+
       setTimeout(function() {
         self.connectionRetries++;
         self.connect(self.websocketOpts);
-      }, self.connectionRetries * 500);
+      }, self.connectionRetries * 200);
     });
   }
 
