@@ -71,4 +71,16 @@ defmodule DomTest do
              ) == [{:replace_text, [0], "hello world"}]
     end
   end
+
+  test "one pass diff" do
+    fun = fn text ->
+      Html.p([on: [click: text, test: ""]], text)
+    end
+
+    Dom.diff(nil, Html.lazy(fun, ["hello"]))
+    |> IO.inspect()
+    |> Map.put(:patches, [])
+    |> Dom.diff(Html.lazy(fun, ["hello"]), Html.lazy(fun, ["hello2"]))
+    |> IO.inspect()
+  end
 end

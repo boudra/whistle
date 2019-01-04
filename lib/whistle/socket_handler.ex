@@ -18,17 +18,17 @@ defmodule Whistle.SocketHandler do
      }}
   end
 
-  def websocket_handle({:text, payload}, state = %{socket: socket}) do
+  def websocket_handle({:text, payload}, state = %{socket: socket, programs: programs}) do
     payload
     |> @json_library.decode()
     |> case do
-      {:ok, %{"type" => "event", "program" => program_name, "handler" => handler, "arguments" => args}} ->
+      {:ok, %{"type" => "event", "program" => program_name, "handler" => handler, "args" => args}} ->
         message =
           {:update, program_name, handler, args}
 
         websocket_info(message, state)
 
-      {:ok, %{"type" => "join", "program" => program_name, "params" => params}} ->
+      {:ok, %{"type" => "join", "program" => program_name, "params" => params, "dom" => dom}} ->
         channel_path = String.split(program_name, ":")
 
         with {:ok, program, program_params} <- state.router.__match(channel_path),
@@ -41,18 +41,19 @@ defmodule Whistle.SocketHandler do
             pid: pid,
             name: program_name,
             handlers: %{},
+            vdom: Whistle.Dom.from_html_string(dom),
             session: session
           }
 
           send(pid, {:connected, socket, session})
+          send(self(), {:updated, program_name}) # trigger an initial render
 
-          reply_program_view(%{state | socket: new_socket}, program_connection)
+          {:ok, %{state | socket: new_socket, programs: Map.put(programs, program_name, program_connection)}}
         end
     end
   end
 
   def terminate(reason, _req, %{socket: socket, programs: programs}) do
-    IO.inspect {:terminating, reason}
     Enum.each(programs, fn
       {_, %{pid: nil}} ->
         nil

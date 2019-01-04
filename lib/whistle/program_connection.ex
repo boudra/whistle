@@ -2,10 +2,13 @@ defmodule Whistle.ProgramConnection do
 
   alias Whistle.ProgramRegistry
 
-  defstruct pid: nil, name: nil, vdom: {0, nil}, handlers: %{}, session: %{}
+  defstruct pid: nil, name: nil, lazy_trees: %{}, vdom: {0, nil}, handlers: %{}, session: %{}
 
   defp handler_message(%{handlers: handlers}, name, args) do
-    case Map.get(handlers, name) do
+    handlers
+    |> Map.get(name, %{})
+    |> Map.get(:msg)
+    |> case do
       nil ->
         {:error, "handler not found"}
 
@@ -19,6 +22,7 @@ defmodule Whistle.ProgramConnection do
 
   def update(program = %{pid: pid, name: name, session: session}, {handler, args}) do
     with {:ok, message} <- handler_message(program, handler, args) do
+      IO.inspect {:message}
       try do
         {:ok, new_session} = GenServer.call(pid, {:update, message, session})
         {:ok, %{program | session: new_session}}
@@ -29,27 +33,16 @@ defmodule Whistle.ProgramConnection do
     end
   end
 
-  def put_new_vdom(program, new_vdom) do
-    {handlers, vdom_diff} =
-      diff(program, new_vdom)
+  def put_new_vdom(program = %{vdom: vdom}, new_vdom) do
+    vdom =
+      program
+      |> Map.take([:handlers, :lazy_trees])
+      |> Map.put(:patches, [])
+      |> Whistle.Dom.diff(vdom, new_vdom)
 
-    new_program = %{program | vdom: new_vdom, handlers: handlers}
+    new_program = %{program | vdom: new_vdom, handlers: vdom.handlers, lazy_trees: vdom.lazy_trees}
 
-    {new_program, vdom_diff}
-  end
-
-  def diff(%{vdom: vdom}, new_vdom) do
-    handlers =
-      []
-      |> Whistle.Dom.extract_event_handlers(new_vdom)
-      |> Enum.into(%{})
-      |> IO.inspect()
-
-    vdom_diff =
-      Whistle.Dom.diff([], vdom, new_vdom)
-      |> Whistle.Dom.serialize_patches()
-
-    {handlers, vdom_diff}
+    {new_program, vdom.patches}
   end
 end
 

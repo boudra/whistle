@@ -1,6 +1,16 @@
 defmodule Whistle.Dom do
   @type t() :: tuple()
 
+  # patch operation codes
+  @replace_text 1
+  @add_node 2
+  @replace_node 3
+  @remove_node 4
+  @set_attribute 5
+  @remove_attribute 6
+  @add_event_handler 7
+  @remove_event_handler 8
+
   defp zip([lh | lt], [rh | rt]) do
     [{lh, rh} | zip(lt, rt)]
   end
@@ -9,170 +19,316 @@ defmodule Whistle.Dom do
   defp zip([lh = {key, _} | lt], []), do: zip([lh | lt], [{key, nil}])
   defp zip([], [rh = {key, _} | rt]), do: zip([{key, nil}], [rh | rt])
 
-  def diff_text({key, {:text, [], text}}, {key, {:text, [], text}}) do
-    []
+  def diff_text(state, path, {key, {:text, [], text}}, {key, {:text, [], text}}) do
+    state
   end
 
-  def diff_text({key, {:text, [], _}}, {key, {:text, [], text2}}) do
-    [{:replace_text, [key], text2}]
+  def diff_text(state, path, {key, {:text, [], _}}, {key, {:text, [], text2}}) do
+    add_patches(state, [[@replace_text, path ++ [key], text2]])
   end
 
-  def diff_text({key, _}, {key, _}) do
-    []
+  def diff_text(state, path, {key, _}, {key, _}) do
+    state
   end
 
-  def diff_children({key, {_, _, children}}, {key, {_, _, new_children}})
+  def diff_children(state, path, {key, {_, _, children}}, {key, {_, _, new_children}})
       when is_list(children) and is_list(new_children) do
     children
     |> zip(new_children)
-    |> Enum.reduce([], fn {a, b}, ops ->
-      ops ++ diff([key], a, b)
+    |> Enum.reduce(state, fn {a, b}, state ->
+      diff(state, path ++ [key], a, b)
     end)
   end
 
-  def diff_children({key, _}, {key, _}) do
-    []
+  def diff_children(state, path, {key, _}, {key, _}) do
+    state
   end
 
-  def diff_attributes({key, {_, attributes, _}}, {key, {_, new_attributes, _}}) do
-    attributes
-    |> Keyword.keys()
-    |> Enum.concat(Keyword.keys(new_attributes))
-    |> Enum.uniq()
-    |> Enum.reduce(
-      [],
-      fn
-        :on, patches ->
-          patches
+  def diff_attributes(
+        state = %{handlers: handlers, patches: patches},
+        path,
+        {key, {_, attributes, _}},
+        {key, {_, new_attributes, _}}
+      ) do
+    new_patches =
+      attributes
+      |> Keyword.keys()
+      |> Enum.concat(Keyword.keys(new_attributes))
+      |> Enum.uniq()
+      |> Enum.reduce(
+        [],
+        fn
+          :on, patches ->
+            patches
 
-        name, patches ->
-          value = Keyword.get(attributes, name)
-          new_value = Keyword.get(new_attributes, name)
+          name, patches ->
+            value = Keyword.get(attributes, name)
+            new_value = Keyword.get(new_attributes, name)
 
-          case {value, new_value} do
-            {value, value} ->
-              []
+            case {value, new_value} do
+              {value, value} ->
+                []
 
-            {_, nil} ->
-              [{:remove_attribute, [key], name}]
+              {_, nil} ->
+                [[@remove_attribute, path ++ [key], name]]
 
-            {_, new_value} ->
-              [{:set_attribute, [key], [name, new_value]}]
-          end ++ patches
-      end
-    )
+              {_, new_value} ->
+                [[@set_attribute, path ++ [key], [name, new_value]]]
+            end ++ patches
+        end
+      )
+
+    full_key = path ++ [key]
+    string_key = Enum.join(full_key, ".")
+
+    old_handlers =
+      attributes
+      |> Keyword.get_values(:on)
+      |> Enum.reduce([], fn handlers, acc ->
+        Enum.map(handlers, fn handler ->
+          handler = build_event_handler(handler, full_key)
+
+          type = Map.get(handler, :event)
+
+          {type, handler}
+        end) ++ acc
+      end)
+      |> Map.new()
+
+    new_handlers =
+      new_attributes
+      |> Keyword.get_values(:on)
+      |> Enum.reduce([], fn handlers, acc ->
+        Enum.map(handlers, fn handler ->
+          handler = build_event_handler(handler, full_key)
+          type = Map.get(handler, :event)
+
+          {type, handler}
+        end) ++ acc
+      end)
+      |> Map.new()
+
+    {new_handlers, new_patches} =
+      Map.keys(old_handlers)
+      |> Enum.concat(Map.keys(new_handlers))
+      |> Enum.uniq()
+      |> Enum.reduce({handlers, new_patches}, fn event, acc = {handlers, patches} ->
+        value = Map.get(old_handlers, event)
+        new_value = Map.get(new_handlers, event)
+        handler_id = string_key <> "." <> Kernel.to_string(event)
+
+        case {value, new_value} do
+          {value, value} ->
+            acc
+
+          {_, nil} ->
+            new_handlers = Map.delete(handlers, handler_id)
+
+            {new_handlers,
+             patches ++
+               [
+                 [@remove_event_handler, full_key, event]
+               ]}
+
+          {nil, new_value} ->
+            new_handlers = Map.put(handlers, handler_id, new_value)
+
+            {new_handlers,
+             patches ++
+               [
+                 [@add_event_handler, full_key, Map.drop(new_value, [:msg, :key])]
+               ]}
+
+          {_, new_value} ->
+            new_handlers =
+              handlers
+              |> Map.delete(handler_id)
+              |> Map.put(handler_id, new_value)
+
+            {new_handlers,
+             patches ++
+               [
+                 [@remove_event_handler, full_key, event],
+                 [@add_event_handler, full_key, Map.drop(new_value, [:msg, :key])]
+               ]}
+        end
+      end)
+
+    state
+    |> add_patches(new_patches)
+    |> add_handlers(new_handlers)
+  end
+
+  defp put_lazy_tree(state = %{lazy_trees: trees}, key, value) do
+    %{state | lazy_trees: Map.put(trees, key, value)}
+  end
+
+  defp add_patches(state = %{patches: patches}, new_patches) do
+    %{state | patches: patches ++ new_patches}
+  end
+
+  defp add_handlers(state = %{handlers: handlers}, new_handlers) do
+    %{state | handlers: Map.merge(handlers, new_handlers)}
+  end
+
+  defp add_node(state = %{handlers: handlers}, path, key, node) do
+    keyed_node = {key, node}
+
+    {new_handlers, node_without_handlers} = extract_event_handlers(handlers, path, keyed_node)
+
+    serialized_node = serialize_virtual_dom(state, path, node_without_handlers)
+
+    handler_patches =
+      Enum.map(new_handlers, fn {_, handler} ->
+        [@add_event_handler, handler.key, Map.drop(handler, [:msg, :key])]
+      end)
+
+    state
+    |> add_patches([[@add_node, path, serialized_node] | handler_patches])
+    |> add_handlers(new_handlers)
   end
 
   def diff(element1, element2) do
-    diff([], {0, element1}, {0, element2})
+    state = %{
+      lazy_trees: %{},
+      patches: [],
+      handlers: %{}
+    }
+
+    diff(state, [], {0, element1}, {0, element2})
   end
 
-  def diff(_path, {_, nil}, {_, nil}) do
-    []
+  def diff(state, element1, element2) do
+    diff(state, [], element1, element2)
   end
 
-  def diff(path, {_, nil}, {key, {:lazy, fun, args}}) do
-    [
-      {:add_node, path, {key, apply(fun, args)}}
-    ]
+  def diff(state, _path, {_, nil}, {_, nil}) do
+    state
   end
 
-  def diff(path, {key, {:lazy, fun, args}}, {key, {:lazy, fun, args}}) do
-    []
+  def diff(state, path, {_, nil}, {key, {:lazy, fun, args}}) do
+    new_node = apply(fun, args)
+
+    state
+    |> put_lazy_tree({fun, args}, new_node)
+    |> add_node(path, key, new_node)
   end
 
-  def diff(path, {key, {:lazy, fun, args}}, {key, {:lazy, new_fun, new_args}}) do
-    diff(path, {key, apply(fun, args)}, {key, apply(new_fun, new_args)})
+  def diff(
+        state = %{lazy_trees: tree},
+        path,
+        {key, {:lazy, fun, args}},
+        {key, {:lazy, new_fun, new_args}}
+      ) do
+    if fun === new_fun and args === new_args do
+      state
+    else
+      new_node = apply(new_fun, new_args)
+
+      case Map.get(tree, {fun, args}) do
+        nil ->
+          state
+          |> add_patches([[@replace_node, path ++ [key], new_node]])
+
+        old_node ->
+          state
+          |> put_lazy_tree({fun, args}, new_node)
+          |> diff(path, {key, old_node}, {key, new_node})
+      end
+    end
   end
 
-  def diff(path, {_, nil}, {key, new_node}) do
-    [
-      {:add_node, path, {key, new_node}}
-    ]
+  def diff(state, path, {_, nil}, {key, new_node}) do
+    add_node(state, path, key, new_node)
   end
 
-  def diff(path, {key, node}, {key, nil}) do
-    [
-      {:remove_node, path ++ [key], []}
-    ]
+  def diff(state, path, {key, node}, {key, nil}) do
+    add_patches(state, [[@remove_node, path ++ [key], []]])
   end
 
-  def diff(path, {key, {tag, _, _}}, {key, new_node = {new_tag, _, _}})
+  def diff(state, path, {key, {tag, _, _}}, {key, new_node = {new_tag, _, _}})
       when tag != new_tag do
-    [
-      {:replace_node, path ++ [key], new_node}
-    ]
+    add_patches(state, [[@replace_node, path ++ [key], new_node]])
   end
 
-  def diff(path, node1, node2) do
-    []
-    |> Enum.concat(diff_attributes(node1, node2))
-    |> Enum.concat(diff_text(node1, node2))
-    |> Enum.concat(diff_children(node1, node2))
-    |> Enum.map(fn {op, key, value} ->
-      {op, path ++ key, value}
-    end)
+  def diff(state, path, node1, node2) do
+    state
+    |> diff_attributes(path, node1, node2)
+    |> diff_text(path, node1, node2)
+    |> diff_children(path, node1, node2)
   end
 
   defp prevent_default(:click), do: true
   defp prevent_default(:submit), do: true
   defp prevent_default(_), do: false
 
-  defp build_event_handler(handler) do
-    prevent_default = prevent_default(Keyword.get(handler, :prevent_default))
+  defp build_event_handler({type, msg}, key) when is_list(msg) do
+    build_event_handler(Keyword.put(msg, :event, type), key)
+  end
+
+  defp build_event_handler({type, msg}, key) do
+    build_event_handler([event: type, msg: msg], key)
+  end
+
+  defp build_event_handler(handler, key) do
+    prevent_default =
+      Keyword.get_lazy(handler, :prevent_default, fn ->
+        handler
+        |> Keyword.get(:event)
+        |> prevent_default()
+      end)
 
     handler
     |> Map.new()
     |> Map.put_new(:prevent_default, prevent_default)
     |> Map.put_new(:stop_propagation, false)
+    |> Map.put(:key, key)
   end
 
-  def extract_event_handlers(path, {key, {_, attributes, children}}) do
-    key = path ++ [key]
-    string_key = Enum.join(key, ".")
+  def extract_event_handlers(handlers, path, {key, {tag, attributes, children}}) do
+    full_key = path ++ [key]
+    string_key = Enum.join(full_key, ".")
 
-    handlers =
+    new_handlers =
       attributes
       |> Keyword.get_values(:on)
       |> Enum.reduce([], fn handlers, acc ->
-        Enum.map(handlers, fn
-          handler when is_list(handler) ->
-            type = Keyword.get(handler, :event)
+        Enum.map(handlers, fn handler ->
+          handler = build_event_handler(handler, full_key)
 
-            {string_key <> "." <> to_string(type), build_event_handler(handler)}
+          type = Map.get(handler, :event)
 
-          {type, msg} ->
-            {string_key <> "." <> to_string(type),
-             build_event_handler(event: type, msg: msg)}
+          {string_key <> "." <> Kernel.to_string(type), handler}
         end) ++ acc
       end)
+      |> Map.new()
 
-    child_handlers =
+    new_attributes = Keyword.delete(attributes, :on)
+
+    {child_handlers, new_children} =
       if is_list(children) do
-        Enum.reduce(children, [], fn node, handlers ->
-          handlers ++ extract_event_handlers(key, node)
+        Enum.reduce(children, {%{}, []}, fn node, {handlers, children} ->
+          {new_handlers, child} = extract_event_handlers(handlers, full_key, node)
+          {new_handlers, children ++ [child]}
         end)
       else
-        []
+        {%{}, children}
       end
 
-    handlers ++ child_handlers
+    {Map.merge(new_handlers, child_handlers), {key, {tag, new_attributes, new_children}}}
   end
 
-  def serialize_virtual_dom(path, {key, {:lazy, fun, args}}) do
-    serialize_virtual_dom(path, {key, apply(fun, args)})
+  def serialize_virtual_dom(state, path, {key, {:lazy, fun, args}}) do
+    serialize_virtual_dom(state, path, {key, Map.get(state.lazy_trees, {fun, args})})
   end
 
-  def serialize_virtual_dom(path, {key, {tag, attributes, children}}) do
+  def serialize_virtual_dom(state, path, {key, {tag, attributes, children}}) do
     key = path ++ [key]
 
     attributes =
       attributes
       |> Enum.concat(key: Enum.join(key, "."))
       |> Enum.map(fn
-        {:on, handlers} ->
-          {"on", Keyword.keys(handlers)}
-
         {:hook, hook} ->
           {"data-hook", hook}
 
@@ -184,7 +340,7 @@ defmodule Whistle.Dom do
     children =
       if is_list(children) do
         Enum.map(children, fn node ->
-          serialize_virtual_dom(key, node)
+          serialize_virtual_dom(state, key, node)
         end)
       else
         children
@@ -193,17 +349,67 @@ defmodule Whistle.Dom do
     [tag, attributes, children]
   end
 
-  def serialize_patches(patches) do
-    patches
+  def from_html_string(html) do
+    case Floki.parse(html) do
+      [root | _] -> {0, from_floki_element(root)}
+      [] -> {0, nil}
+      root -> {0, from_floki_element(root)}
+    end
+  end
+
+  def from_floki_attributes([]) do
+    []
+  end
+
+  def from_floki_attributes([{"data-" <> _, value} | rest]) do
+    from_floki_attributes(rest)
+  end
+
+  def from_floki_attributes([{key, value} | rest]) do
+    [{String.to_existing_atom(key), value} | from_floki_attributes(rest)]
+  end
+
+  def from_floki_element(element) when is_binary(element) do
+    Whistle.Html.text(element)
+  end
+
+  def from_floki_element({tag, attributes, children}) do
+    children =
+      children
+      |> Enum.with_index()
+      |> Enum.map(fn {node, index} ->
+        {index, from_floki_element(node)}
+      end)
+
+    {tag, from_floki_attributes(attributes), children}
+  end
+
+  defp attributes_to_string(attributes) do
+    attributes
     |> Enum.map(fn
-      {:replace_node, path, data} ->
-        ["replace_node", path, serialize_virtual_dom(path, {0, data})]
+      {:on, _} ->
+        ""
 
-      {:add_node, path, data} ->
-        ["add_node", path, serialize_virtual_dom(path, data)]
-
-      {op, path, data} ->
-        [Atom.to_string(op), path, data]
+      {key, value} ->
+        ~s(#{key}="#{value}")
     end)
+    |> Enum.join(" ")
+  end
+
+  def to_string(node = {_, _, _}) do
+    __MODULE__.to_string({0, node})
+  end
+
+  def to_string({_, {:text, [], content}}) do
+    content
+  end
+
+  def to_string({key, {tag, attributes, children}}) do
+    children =
+      children
+      |> Enum.map(&__MODULE__.to_string/1)
+      |> Enum.join("")
+
+    ~s(<#{tag} #{attributes_to_string(attributes)}>#{children}</#{tag}>)
   end
 end
