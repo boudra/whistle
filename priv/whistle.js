@@ -34,13 +34,7 @@
       node.checked = value;
     } else if (key == "required") {
       node.required = value;
-    } else if (key == "scroll_top") {
-      if(value == "bottom") {
-        node.scrollTop = node.scrollHeight;
-      } else {
-        node.scrollTop = value;
-      }
-    } else{
+    } else {
       node.setAttribute(key, value);
     }
   }
@@ -101,7 +95,18 @@
             case 3:
               {
                 var node = renderVirtualDom(patch[2]);
-                findNodeByPath(self.rootElement, patch[1]).replaceWith(node);
+                var oldNode = findNodeByPath(self.rootElement, patch[1]);
+                self.__callHooks("removingElement", oldNode);
+                oldNode.replaceWith(node);
+                self.__callHooks("creatingElement", node);
+              }
+              break;
+
+            case 4:
+              {
+                var node = findNodeByPath(self.rootElement, patch[1]);
+                self.__callHooks("removingElement", oldNode);
+                node.remove(node);
               }
               break;
 
@@ -110,6 +115,7 @@
                 var parent = findNodeByPath(self.rootElement, patch[1]);
                 var node = renderVirtualDom(patch[2]);
                 parent.appendChild(node);
+                self.__callHooks("creatingElement", node);
               }
               break;
 
@@ -178,7 +184,6 @@
           }
         });
       }
-
     });
 
     this.send = function(name, payload) {
@@ -189,13 +194,37 @@
       });
     }
 
-    this.hook = function(name, funs) {
+    this.addHook = function(name, funs) {
       this.hooks[name] = funs;
+      this.__callHook(name, funs, "creatingElement", this.rootElement);
+    }
+
+    this.__callHook = function(name, funs, type, target) {
+      if(typeof target.querySelector == "function") {
+        var node = target.querySelector("#" + name);
+
+        if(node && funs[type]) {
+          funs[type](node);
+        }
+      }
+    }
+
+    this.__callHooks = function(type, target) {
+      for(var name in this.hooks) {
+        this.__callHook(name, this.hooks[name], type, target);
+      }
     }
 
     this.on = function(event, fun) {
+      var self = this;
       if(event == "join") {
         this.websocket.addEventListener("open", fun.bind(this));
+      } else if(event == "message") {
+        this.socket.onMessageFor(this.name, function(data) {
+          if(data.type == "message") {
+            fun.call(self, data.payload);
+          }
+        });
       }
     }
   };

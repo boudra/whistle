@@ -389,7 +389,6 @@ defmodule Whistle.Dom do
     |> Enum.map(fn
       {:on, _} ->
         ""
-
       {key, value} ->
         ~s(#{key}="#{value}")
     end)
