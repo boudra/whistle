@@ -42,7 +42,8 @@ defmodule Whistle.MixProject do
       {:phoenix_pubsub, "~> 1.0"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:ex_doc, ">= 0.0.0", only: :dev}
+      {:ex_doc, ">= 0.0.0", only: :dev},
+      {:floki, "~> 0.20.0"}
     ]
   end
 end
