@@ -30,8 +30,8 @@ defmodule Whistle.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      mod: {Whistle.Application, []},
-      extra_applications: [:logger, :plug_cowboy]
+      mod: [],
+      extra_applications: [:logger]
     ]
   end
 
@@ -39,10 +39,12 @@ defmodule Whistle.MixProject do
   defp deps do
     [
       {:plug, "~> 1.7"},
-      {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"},
-      {:ex_doc, ">= 0.0.0", only: :dev},
-      {:floki, "~> 0.20.0"}
+      {:floki, "~> 0.20.0"},
+
+      # Optional dependencies
+      {:jason, "~> 1.0", optional: true},
+      {:plug_cowboy, "~> 2.0", optional: true},
+      {:ex_doc, ">= 0.0.0", only: :dev}
     ]
   end
 end

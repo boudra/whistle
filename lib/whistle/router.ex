@@ -1,4 +1,5 @@
 defmodule Whistle.Router do
+
   def child_spec(router) do
     children = [
       {Registry, [keys: :unique, name: Module.concat(router, Registry)]},
