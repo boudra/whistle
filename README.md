@@ -36,6 +36,8 @@ defmodule MyAppWeb.ProgramRouter do
 end
 ```
 
+This is how the browser knows which Program to mount:
+
 ```
 +---------+          +-------------+                  +-----------+
 | Client  |  /ws ->  |   Router    |  chat:*lobby ->  |  Program  |
@@ -84,7 +86,7 @@ children = [
 
 ## Integrating Whistle with an existing Phoenix endpoint
 
-Whistle provides a Http server module (with **Plug & Cowboy2**) that works out of the box, but it can also work alongside Phoenix.
+Whistle provides a Http server module that runs **Plug & Cowboy** for you and works out of the box, but it can also work alongside Phoenix.
 
 All we need to do is add the router handlers to the Cowboy dispatch options.
 
