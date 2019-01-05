@@ -1,37 +1,21 @@
 defmodule Whistle.ProgramRegistry do
-  use DynamicSupervisor
 
-  def start_link(name) do
-    DynamicSupervisor.start_link(__MODULE__, [], name: name)
-  end
-
-  @impl true
-  def init(_arg) do
-    DynamicSupervisor.init(strategy: :one_for_one)
-  end
-
-  def start_program(name, program, params) do
+  def start_program(router, name, program, params) do
     spec = {
-      Whistle.ProgramInstance, {name, program, params}
+      Whistle.ProgramInstance, {router, name, program, params}
     }
 
-    DynamicSupervisor.start_child(__MODULE__, spec)
+    DynamicSupervisor.start_child(Module.concat(router, Supervisor), spec)
   end
 
-  def pid(name) do
-    case :global.whereis_name(name) do
+  def ensure_started(router, name, program, params) do
+    case Registry.whereis_name({Module.concat(router, Registry), name}) do
       :undefined ->
-        {:error, :not_started}
+        router
+        |> build_group_name(name)
+        |> :pg2.create()
 
-      pid ->
-        {:ok, pid}
-    end
-  end
-
-  def ensure_started(name, program, params) do
-    case :global.whereis_name(name) do
-      :undefined ->
-        case start_program(name, program, params) do
+        case start_program(router, name, program, params) do
           {:ok, pid} ->
             {:ok, pid}
 
@@ -44,18 +28,19 @@ defmodule Whistle.ProgramRegistry do
     end
   end
 
-  def register(name, pid) do
-    IO.inspect({"register", name, pid})
-    :global.register_name(name, pid)
-    :pg2.create(name)
+  def build_group_name(router, name) do
+    Atom.to_string(router) <> "." <> name
   end
 
-  def subscribe(name, pid) do
-    :pg2.join(name, pid)
+  def subscribe(router, name, pid) do
+    router
+    |> build_group_name(name)
+    |> :pg2.join(pid)
   end
 
-  def broadcast(name, message) do
-    name
+  def broadcast(router, name, message) do
+    router
+    |> build_group_name(name)
     |> :pg2.get_members()
     |> Enum.each(fn pid ->
       send(pid, message)

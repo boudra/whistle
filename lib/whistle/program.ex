@@ -22,9 +22,9 @@ defmodule Whistle.Program do
     channel_path = String.split(program_name, ":")
 
     with {:ok, program, program_params} <- router.__match(channel_path),
-         {:ok, pid} <- Whistle.ProgramRegistry.ensure_started(program_name, program, program_params),
-         {:ok, new_socket, session} <-
-           GenServer.call(pid, {:authorize, %{}, Map.merge(program_params, params)}) do
+         {:ok, pid} <- Whistle.ProgramRegistry.ensure_started(router, program_name, program, program_params),
+         {:ok, _, session} <-
+           Whistle.ProgramInstance.authorize(router, program_name, %{}, Map.merge(program_params, params)) do
       new_vdom = GenServer.call(pid, {:view, session})
       Whistle.Dom.node_to_string(new_vdom)
     end

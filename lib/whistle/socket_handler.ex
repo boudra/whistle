@@ -1,7 +1,7 @@
 defmodule Whistle.SocketHandler do
   @behaviour :cowboy_websocket
 
-  alias Whistle.{ProgramRegistry, ProgramConnection, Socket}
+  alias Whistle.{ProgramInstance, ProgramRegistry, ProgramConnection, Socket}
 
   @json_library Application.get_env(:whistle, :json_library, Jason)
 
@@ -18,7 +18,7 @@ defmodule Whistle.SocketHandler do
      }}
   end
 
-  def websocket_handle({:text, payload}, state = %{socket: socket, programs: programs}) do
+  def websocket_handle({:text, payload}, state = %{router: router, socket: socket, programs: programs}) do
     payload
     |> @json_library.decode()
     |> case do
@@ -31,21 +31,22 @@ defmodule Whistle.SocketHandler do
       {:ok, %{"type" => "join", "program" => program_name, "params" => params, "dom" => dom}} ->
         channel_path = String.split(program_name, ":")
 
-        with {:ok, program, program_params} <- state.router.__match(channel_path),
-             {:ok, pid} <- ProgramRegistry.ensure_started(program_name, program, program_params),
+        with {:ok, program, program_params} <- router.__match(channel_path),
+             {:ok, pid} <- ProgramRegistry.ensure_started(router, program_name, program, program_params),
              {:ok, new_socket, session} <-
-               GenServer.call(pid, {:authorize, socket, Map.merge(program_params, params)}) ,
-             :ok <- ProgramRegistry.subscribe(program_name, self()) do
+               ProgramInstance.authorize(router, program_name, socket, Map.merge(program_params, params)),
+             :ok <- ProgramRegistry.subscribe(router, program_name, self()) do
 
           program_connection = %ProgramConnection{
-            pid: pid,
+            router: router,
             name: program_name,
             handlers: %{},
             vdom: Whistle.Dom.from_html_string(dom),
             session: session
           }
 
-          send(pid, {:connected, socket, session})
+          ProgramConnection.notify_connection(program_connection, socket)
+
           send(self(), {:updated, program_name}) # trigger an initial render
 
           {:ok, %{state | socket: new_socket, programs: Map.put(programs, program_name, program_connection)}}
@@ -54,30 +55,24 @@ defmodule Whistle.SocketHandler do
   end
 
   def terminate(reason, _req, %{socket: socket, programs: programs}) do
-    Enum.each(programs, fn
-      {_, %{pid: nil}} ->
-        nil
-
-      {_, %{pid: pid, name: name, session: session}} ->
-        send(pid, {:disconnected, socket, session})
+    Enum.each(programs, fn {_, program} ->
+      ProgramConnection.notify_disconnection(program, socket)
     end)
 
     :ok
   end
 
-  def websocket_info({:program_terminating, program_name, _reason}, state = %{programs: programs}) do
-    program = Map.get(programs, program_name)
-    new_program = %{program | pid: nil}
-
-    {:ok, %{state | programs: Map.put(programs, program_name, new_program)}}
+  def websocket_info({:program_terminating, _program_name, _reason}, state) do
+    # program died
+    {:ok, state}
   end
 
-  def websocket_info({:program_started, program_name, pid}, state = %{socket: socket, programs: programs}) do
+  def websocket_info({:program_started, program_name}, state = %{socket: socket, programs: programs}) do
     program = Map.get(programs, program_name)
-    new_program = %{program | pid: pid}
-    send(pid, {:connected, socket, program.session})
 
-    reply_program_view(%{state | programs: Map.put(programs, program_name, new_program)}, new_program)
+    ProgramConnection.notify_connection(program, socket)
+
+    reply_program_view(state, program)
   end
 
   def websocket_info({:update, program_name, handler, args}, state = %{programs: programs}) do
@@ -102,8 +97,8 @@ defmodule Whistle.SocketHandler do
     end
   end
 
-  defp reply_program_view(state = %{programs: programs}, program = %{pid: pid, name: name, session: session}) do
-    new_vdom = GenServer.call(pid, {:view, session})
+  defp reply_program_view(state = %{programs: programs}, program = %{name: name}) do
+    new_vdom = ProgramConnection.view(program)
     {new_program, vdom_diff} = ProgramConnection.put_new_vdom(program, new_vdom)
     new_state = %{state | programs: Map.put(programs, name, new_program)}
 

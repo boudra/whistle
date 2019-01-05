@@ -69,7 +69,7 @@ defmodule Whistle.Dom do
 
   # TODO: create @remove_event_handler patches for the DOM
   def diff(state, path, {key, node}, {key, nil}) do
-    add_patches(state, [[@remove_node, path ++ [key], []]])
+    add_patches(state, [[@remove_node, path ++ [key]]])
   end
 
   def diff(state, path, {key, {tag, _, _}}, {key, new_node = {new_tag, _, _}})

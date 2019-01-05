@@ -1,79 +1,124 @@
 defmodule Whistle.ProgramInstance do
   use GenServer
 
-  alias Whistle.ProgramRegistry
+  alias Whistle.{ProgramRegistry, ProgramInstance}
 
-  def start_link(arg) do
-    GenServer.start_link(__MODULE__, arg)
+  defstruct router: nil, name: nil, program: nil, params: nil, state: %{}
+
+  defp via(router, name) do
+    registry =
+      Module.concat(router, Registry)
+
+    {:via, Registry, {registry, name}}
   end
 
-  def init({name, program, params}) do
-    ProgramRegistry.register(name, self())
-    ProgramRegistry.broadcast(name, {:program_started, name, self()})
+  def start_link(arg = {router, name, program, params}) do
+    GenServer.start_link(__MODULE__, arg, name: via(router, name))
+  end
 
+  def init({router, name, program, params}) do
     case program.init(params) do
       {:ok, state} ->
-        {:ok, {name, program, state}}
+        ProgramRegistry.broadcast(router, name, {:program_started, name})
+
+        instance = %ProgramInstance{
+          router: router,
+          name: name,
+          program: program,
+          params: params,
+          state: state
+        }
+
+        {:ok, instance}
 
       error = {:error, _} ->
         error
     end
   end
 
-  def terminate(reason, {name, _, _}) do
-    ProgramRegistry.broadcast(name, {:program_terminating, name, reason})
+  def terminate(reason, %{name: name, router: router}) do
+    ProgramRegistry.broadcast(router, name, {:program_terminating, name, reason})
   end
 
-  def handle_call({:update, message, session}, _from, state = {name, program, model}) do
+  def handle_call(
+        {:update, message, session},
+        _from,
+        instance = %{router: router, name: name, program: program, state: state}
+      ) do
     IEx.Helpers.r(program)
 
-    case program.update(message, model, session) do
-      {:ok, new_model, new_session} ->
-        ProgramRegistry.broadcast(name, {:updated, name})
-        {:reply, {:ok, new_session}, {name, program, new_model}}
+    case program.update(message, state, session) do
+      {:ok, new_state, new_session} ->
+        ProgramRegistry.broadcast(router, name, {:updated, name})
+
+        {:reply, {:ok, new_session}, %{instance | state: new_state}}
 
       error = {:error, _} ->
-        {:reply, error, state}
+        {:reply, error, instance}
     end
   end
 
-  def handle_call({:view, socket}, _from, state = {_name, program, model}) do
+  def handle_call({:view, session}, _from, instance = %{program: program, state: state}) do
     IEx.Helpers.r(program)
 
-    {:reply, {0, program.view(model, socket)}, state}
+    {:reply, {0, program.view(state, session)}, instance}
   end
 
-  def handle_call({:authorize, socket, params}, _from, state = {_name, program, model}) do
-    case program.authorize(model, socket, params) do
+  def handle_call(
+        {:authorize, socket, params},
+        _from,
+        instance = %{name: name, program: program, state: state}
+      ) do
+    case program.authorize(state, socket, params) do
       res = {:ok, _new_socket, _session} ->
-        {:reply, res, state}
+        {:reply, res, instance}
 
       other ->
-        {:reply, other, state}
+        {:reply, other, instance}
     end
   end
 
-  def handle_info({:update, message, session}, state = {name, program, model}) do
-    case program.update(message, model, session) do
-      {:ok, new_model, _} ->
-        {:noreply, {name, program, new_model}}
+  def handle_info(
+        message,
+        instance = %{router: router, name: name, program: program, state: state}
+      ) do
+    case program.handle_info(message, state) do
+      {:ok, ^state} ->
+        {:noreply, instance}
+
+      {:ok, new_state} ->
+        ProgramRegistry.broadcast(router, name, {:updated, name})
+        {:noreply, %{instance | state: new_state}}
 
       {:error, _} ->
-        {:noreply, state}
+        {:noreply, instance}
     end
   end
 
-  def handle_info(message, state = {name, program, model}) do
-    case program.handle_info(message, model) do
-      {:ok, ^model} ->
-        {:noreply, {name, program, model}}
+  # API
 
-      {:ok, new_model} ->
-        ProgramRegistry.broadcast(name, {:updated, name})
-        {:noreply, {name, program, new_model}}
+  def authorize(router, name, socket, params) do
+    GenServer.call(via(router, name), {:authorize, socket, params})
+  end
 
-      {:error, _} ->
-        {:noreply, state}
+  def update(router, name, message, session) do
+    GenServer.call(via(router, name), {:update, message, session})
+  end
+
+  def view(router, name, session) do
+    GenServer.call(via(router, name), {:view, session})
+  end
+
+  def send_info(router, name, message) do
+    case Registry.whereis_name({Module.concat(router, Registry), name}) do
+      :undefined ->
+        :error
+
+      pid ->
+        send(pid, message)
+
+        :ok
     end
   end
+
 end

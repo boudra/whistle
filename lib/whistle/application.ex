@@ -7,8 +7,8 @@ defmodule Whistle.Application do
     import Supervisor.Spec, warn: false
 
     children = [
-      supervisor(Phoenix.PubSub.PG2, [Whistle.PubSub, []]),
-      supervisor(Whistle.ProgramRegistry, [Whistle.ProgramRegistry])
+      {Registry, keys: :unique, name: WhistleChat.ProgramRouter.Registry},
+      {DynamicSupervisor, name: WhistleChat.ProgramRouter.Supervisor, strategy: :one_for_one}
     ] ++ http_server(@http_server)
 
     opts = [strategy: :one_for_one, name: MyApp.Supervisor]

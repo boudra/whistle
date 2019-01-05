@@ -1,8 +1,8 @@
 defmodule Whistle.ProgramConnection do
 
-  alias Whistle.ProgramRegistry
+  alias Whistle.{ProgramInstance}
 
-  defstruct pid: nil, name: nil, lazy_trees: %{}, vdom: {0, nil}, handlers: %{}, session: %{}
+  defstruct router: nil, name: nil, lazy_trees: %{}, vdom: {0, nil}, handlers: %{}, session: %{}
 
   defp handler_message(%{handlers: handlers}, name, args) do
     handlers
@@ -20,11 +20,10 @@ defmodule Whistle.ProgramConnection do
     end
   end
 
-  def update(program = %{pid: pid, name: name, session: session}, {handler, args}) do
+  def update(program = %{router: router, name: name, session: session}, {handler, args}) do
     with {:ok, message} <- handler_message(program, handler, args) do
-      IO.inspect {:message}
       try do
-        {:ok, new_session} = GenServer.call(pid, {:update, message, session})
+        {:ok, new_session} = ProgramInstance.update(router, name, message, session)
         {:ok, %{program | session: new_session}}
       catch
         :exit, value ->
@@ -33,16 +32,30 @@ defmodule Whistle.ProgramConnection do
     end
   end
 
-  def put_new_vdom(program = %{vdom: vdom}, new_vdom) do
-    vdom =
-      program
-      |> Map.take([:handlers, :lazy_trees])
-      |> Map.put(:patches, [])
-      |> Whistle.Dom.diff(vdom, new_vdom)
+  def put_new_vdom(program = %{handlers: handlers, lazy_trees: trees, vdom: vdom}, new_vdom) do
+    diff =
+      Whistle.Dom.diff(trees, vdom, new_vdom)
 
-    new_program = %{program | vdom: new_vdom, handlers: vdom.handlers, lazy_trees: vdom.lazy_trees}
+    handlers =
+      Enum.reduce(diff.handlers, handlers, fn {:put, name, handler}, handlers ->
+        Map.put(handlers, name, handler)
+      end)
 
-    {new_program, vdom.patches}
+    new_program = %{program | vdom: new_vdom, handlers: handlers, lazy_trees: diff.lazy_trees}
+
+    {new_program, diff.patches}
+  end
+
+  def notify_connection(%{router: router, name: name, session: session}, socket) do
+    ProgramInstance.send_info(router, name, {:connected, socket, session})
+  end
+
+  def notify_disconnection(%{router: router, name: name, session: session}, socket) do
+    ProgramInstance.send_info(router, name, {:disconnected, socket, session})
+  end
+
+  def view(%{router: router, name: name, session: session}) do
+    ProgramInstance.view(router, name, session)
   end
 end
 
