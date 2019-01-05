@@ -2,14 +2,13 @@
 
 Whistle allows you to write interactive dynamic web apps entirely in Elixir.
 
-Documentation: [https://hexdocs.pm/whistle](https://hexdocs.pm/whistle).
-Example Chat Application: [boudra/whistle-chat](https://github.com/boudra/whistle-chat).
+- Documentation: [https://hexdocs.pm/whistle](https://hexdocs.pm/whistle).
+- Example Chat Application: [boudra/whistle-chat](https://github.com/boudra/whistle-chat).
 
 ## How does it work?
 
 Whistle is influenced by [The Elm Architecture](https://guide.elm-lang.org/architecture/), Whistle moves this architecture to the server and streams DOM changes to the client via WebSockets.
 
-Then navigate to http://localhost:4000/index.html to preview the app
 
 ## Installation
 
@@ -195,3 +194,5 @@ Run your application:
 ```
 $ iex -S mix
 ```
+
+Now navigate to http://localhost:4000/ to see your awesome counter!
