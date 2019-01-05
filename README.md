@@ -85,7 +85,9 @@ children = [
 
 Whistle provides a Http server module (with **Plug & Cowboy2**) that works out of the box, but it can also work alongside Phoenix.
 
-All we need to do is add the router handlers to the Cowboy dispatch options, this is the important line, you need to list all your routers as an argument to `build_handlers/1`
+All we need to do is add the router handlers to the Cowboy dispatch options.
+
+Pass a list of all your routers as an argument to the `build_handlers/1` helper:
 
 ```elixir
 Whistle.HttpServer.build_handlers([MyAppWeb.ProgramRouter])
