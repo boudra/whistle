@@ -31,7 +31,7 @@ defmodule Whistle.MixProject do
   def application do
     [
       mod: {Whistle.Application, []},
-      extra_applications: [:logger, :plug_cowboy, :phoenix_pubsub]
+      extra_applications: [:logger, :plug_cowboy]
     ]
   end
 
@@ -39,7 +39,6 @@ defmodule Whistle.MixProject do
   defp deps do
     [
       {:plug, "~> 1.7"},
-      {:phoenix_pubsub, "~> 1.0"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:ex_doc, ">= 0.0.0", only: :dev},
