@@ -18,13 +18,15 @@ defmodule Whistle.SocketHandler do
      }}
   end
 
-  def websocket_handle({:text, payload}, state = %{router: router, socket: socket, programs: programs}) do
+  def websocket_handle(
+        {:text, payload},
+        state = %{router: router, socket: socket, programs: programs}
+      ) do
     payload
     |> @json_library.decode()
     |> case do
       {:ok, %{"type" => "event", "program" => program_name, "handler" => handler, "args" => args}} ->
-        message =
-          {:update, program_name, handler, args}
+        message = {:update, program_name, handler, args}
 
         websocket_info(message, state)
 
@@ -32,11 +34,16 @@ defmodule Whistle.SocketHandler do
         channel_path = String.split(program_name, ":")
 
         with {:ok, program, program_params} <- router.__match(channel_path),
-             {:ok, pid} <- ProgramRegistry.ensure_started(router, program_name, program, program_params),
+             {:ok, pid} <-
+               ProgramRegistry.ensure_started(router, program_name, program, program_params),
              {:ok, new_socket, session} <-
-               ProgramInstance.authorize(router, program_name, socket, Map.merge(program_params, params)),
+               ProgramInstance.authorize(
+                 router,
+                 program_name,
+                 socket,
+                 Map.merge(program_params, params)
+               ),
              :ok <- ProgramRegistry.subscribe(router, program_name, self()) do
-
           program_connection = %ProgramConnection{
             router: router,
             name: program_name,
@@ -47,9 +54,15 @@ defmodule Whistle.SocketHandler do
 
           ProgramConnection.notify_connection(program_connection, socket)
 
-          send(self(), {:updated, program_name}) # trigger an initial render
+          # trigger an initial render
+          send(self(), {:updated, program_name})
 
-          {:ok, %{state | socket: new_socket, programs: Map.put(programs, program_name, program_connection)}}
+          {:ok,
+           %{
+             state
+             | socket: new_socket,
+               programs: Map.put(programs, program_name, program_connection)
+           }}
         end
     end
   end
@@ -67,7 +80,10 @@ defmodule Whistle.SocketHandler do
     {:ok, state}
   end
 
-  def websocket_info({:program_started, program_name}, state = %{socket: socket, programs: programs}) do
+  def websocket_info(
+        {:program_started, program_name},
+        state = %{socket: socket, programs: programs}
+      ) do
     program = Map.get(programs, program_name)
 
     ProgramConnection.notify_connection(program, socket)

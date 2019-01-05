@@ -1,5 +1,4 @@
 defmodule Whistle.ProgramConnection do
-
   alias Whistle.{ProgramInstance}
 
   defstruct router: nil, name: nil, lazy_trees: %{}, vdom: {0, nil}, handlers: %{}, session: %{}
@@ -33,8 +32,7 @@ defmodule Whistle.ProgramConnection do
   end
 
   def put_new_vdom(program = %{handlers: handlers, lazy_trees: trees, vdom: vdom}, new_vdom) do
-    diff =
-      Whistle.Dom.diff(trees, vdom, new_vdom)
+    diff = Whistle.Dom.diff(trees, vdom, new_vdom)
 
     handlers =
       Enum.reduce(diff.handlers, handlers, fn {:put, name, handler}, handlers ->
@@ -58,4 +56,3 @@ defmodule Whistle.ProgramConnection do
     ProgramInstance.view(router, name, session)
   end
 end
-

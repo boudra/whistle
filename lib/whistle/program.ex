@@ -13,8 +13,10 @@ defmodule Whistle.Program do
   end
 
   @callback init(map()) :: {:ok, Whistle.state()}
-  @callback authorize(Whistle.state(), Socket.t(), map()) :: {:ok, Socket.t(), Whistle.Session.t()} | {:error, any()}
-  @callback update(Whistle.message(), Whistle.state(), Socket.t()) :: {:ok, Whistle.state(), Whistle.Session.t()}
+  @callback authorize(Whistle.state(), Socket.t(), map()) ::
+              {:ok, Socket.t(), Whistle.Session.t()} | {:error, any()}
+  @callback update(Whistle.message(), Whistle.state(), Socket.t()) ::
+              {:ok, Whistle.state(), Whistle.Session.t()}
   @callback handle_info(any(), Whistle.state()) :: {:ok, Whistle.state()}
   @callback view(Whistle.state(), Whistle.Session.t()) :: Whistle.Dom.t()
 
@@ -22,9 +24,15 @@ defmodule Whistle.Program do
     channel_path = String.split(program_name, ":")
 
     with {:ok, program, program_params} <- router.__match(channel_path),
-         {:ok, pid} <- Whistle.ProgramRegistry.ensure_started(router, program_name, program, program_params),
+         {:ok, pid} <-
+           Whistle.ProgramRegistry.ensure_started(router, program_name, program, program_params),
          {:ok, _, session} <-
-           Whistle.ProgramInstance.authorize(router, program_name, %{}, Map.merge(program_params, params)) do
+           Whistle.ProgramInstance.authorize(
+             router,
+             program_name,
+             %{},
+             Map.merge(program_params, params)
+           ) do
       new_vdom = GenServer.call(pid, {:view, session})
       Whistle.Dom.node_to_string(new_vdom)
     end
@@ -36,11 +44,9 @@ defmodule Whistle.Program do
       |> @json_library.encode!()
       |> Plug.HTML.html_escape()
 
-    initial_view =
-      render(router, program_name, params)
+    initial_view = render(router, program_name, params)
 
-    socket_handler =
-      "ws://localhost:4000/ws"
+    socket_handler = "ws://localhost:4000/ws"
 
     """
     <div

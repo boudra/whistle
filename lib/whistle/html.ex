@@ -1,5 +1,4 @@
 defmodule Whistle.Html do
-
   def node(tag, attributes, text) when is_binary(text) do
     node(tag, attributes, [text])
   end
@@ -58,5 +57,4 @@ defmodule Whistle.Html do
   def lazy(fun, args) do
     {:lazy, fun, args}
   end
-
 end

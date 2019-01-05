@@ -1,8 +1,8 @@
 defmodule Whistle.ProgramRegistry do
-
   def start_program(router, name, program, params) do
     spec = {
-      Whistle.ProgramInstance, {router, name, program, params}
+      Whistle.ProgramInstance,
+      {router, name, program, params}
     }
 
     DynamicSupervisor.start_child(Module.concat(router, Supervisor), spec)

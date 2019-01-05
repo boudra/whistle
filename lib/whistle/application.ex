@@ -6,10 +6,7 @@ defmodule Whistle.Application do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
-    children = [
-      {Registry, keys: :unique, name: WhistleChat.ProgramRouter.Registry},
-      {DynamicSupervisor, name: WhistleChat.ProgramRouter.Supervisor, strategy: :one_for_one}
-    ] ++ http_server(@http_server)
+    children = http_server(@http_server)
 
     opts = [strategy: :one_for_one, name: MyApp.Supervisor]
     Supervisor.start_link(children, opts)
@@ -25,7 +22,8 @@ defmodule Whistle.Application do
         scheme: Keyword.get(opts, :scheme, :http),
         plug: nil,
         options: [
-          dispatch: dispatch(Keyword.get(opts, :socket_handlers, %{}), Keyword.get(opts, :plug, nil)),
+          dispatch:
+            dispatch(Keyword.get(opts, :socket_handlers, %{}), Keyword.get(opts, :plug, nil)),
           port: Keyword.get(opts, :port, 4000)
         ]
       )

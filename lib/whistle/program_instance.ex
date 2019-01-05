@@ -6,8 +6,7 @@ defmodule Whistle.ProgramInstance do
   defstruct router: nil, name: nil, program: nil, params: nil, state: %{}
 
   defp via(router, name) do
-    registry =
-      Module.concat(router, Registry)
+    registry = Module.concat(router, Registry)
 
     {:via, Registry, {registry, name}}
   end
@@ -120,5 +119,4 @@ defmodule Whistle.ProgramInstance do
         :ok
     end
   end
-
 end

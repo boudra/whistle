@@ -24,8 +24,7 @@ defmodule DomTest do
     assert Html.p([], []) == {"p", [], []}
     assert Html.p([class: "class"], []) == {"p", [class: "class"], []}
 
-    assert Html.p([class: "class"], "some text") ==
-             {"p", [class: "class"], [{0, "some text"}]}
+    assert Html.p([class: "class"], "some text") == {"p", [class: "class"], [{0, "some text"}]}
 
     assert Html.p([class: "class"], [Html.text("some text")]) ==
              Html.p([class: "class"], "some text")
@@ -89,36 +88,33 @@ defmodule DomTest do
 
   describe "event handlers" do
     test "get added when new" do
-      node =
-        Html.p([on: [click: "something"]], "test")
+      node = Html.p([on: [click: "something"]], "test")
 
       assert %{
-        handlers: [
-          {:put, "0.click", %{msg: "something"}}
-        ],
-        patches: [
-          [@add_node|_],
-          [@add_event_handler, [0], _]
-        ]
-      } = Dom.diff(nil, node)
+               handlers: [
+                 {:put, "0.click", %{msg: "something"}}
+               ],
+               patches: [
+                 [@add_node | _],
+                 [@add_event_handler, [0], _]
+               ]
+             } = Dom.diff(nil, node)
     end
 
     test "get changed" do
-      node =
-        Html.p([on: [click: "something"]], "test")
+      node = Html.p([on: [click: "something"]], "test")
 
-      node2 =
-        Html.p([on: [click: "something else"]], "test")
+      node2 = Html.p([on: [click: "something else"]], "test")
 
       assert %{
-        handlers: [
-          {:put, "0.click", %{msg: "something else"}}
-        ],
-        patches: [
-          [@remove_event_handler, [0], :click],
-          [@add_event_handler, [0], %{event: :click}]
-        ]
-      } = Dom.diff(node, node2)
+               handlers: [
+                 {:put, "0.click", %{msg: "something else"}}
+               ],
+               patches: [
+                 [@remove_event_handler, [0], :click],
+                 [@add_event_handler, [0], %{event: :click}]
+               ]
+             } = Dom.diff(node, node2)
     end
   end
 end

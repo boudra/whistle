@@ -344,7 +344,7 @@ defmodule Whistle.Dom do
 
     attributes =
       attributes
-      |> Enum.map(fn{k, v} -> {Atom.to_string(k), v} end)
+      |> Enum.map(fn {k, v} -> {Atom.to_string(k), v} end)
       |> Enum.into(%{})
 
     children =
