@@ -2,8 +2,8 @@
 
 Whistle allows you to write interactive dynamic web apps entirely in Elixir.
 
-- Documentation: [https://hexdocs.pm/whistle](https://hexdocs.pm/whistle).
-- Example Chat Application: [boudra/whistle-chat](https://github.com/boudra/whistle-chat).
+- Documentation: [https://hexdocs.pm/whistle](https://hexdocs.pm/whistle)
+- Example Chat Application: [boudra/whistle-chat](https://github.com/boudra/whistle-chat)
 
 ## How does it work?
 
@@ -22,7 +22,9 @@ end
 
 ## Getting started
 
-The router defines the path of the Websocket listener and what routes match to what programs, like this:
+The router is where everything starts, it defines the path of the Websocket listener and what routes match to what programs.
+
+Here is an example:
 
 ```elixir
 # lib/my_app_web/program_router.ex
