@@ -86,7 +86,7 @@ children = [
 
 ## Integrating Whistle with an existing Phoenix endpoint
 
-Whistle provides a Http server module that runs **Plug & Cowboy** for you and works out of the box, but it can also work alongside Phoenix.
+Whistle provides a HTTP server module that runs **Plug & Cowboy** for you and works out of the box, but it can also work alongside Phoenix.
 
 All we need to do is add the router handlers to the Cowboy dispatch options.
 
@@ -108,9 +108,9 @@ config :myapp, MyAppWeb.Endpoint,
 
 Check out the [Phoenix.CowBoy2.Adapter docs](https://hexdocs.pm/phoenix/Phoenix.Endpoint.Cowboy2Adapter.html) for more info.
 
-## Running a standalone Whistle Http server
+## Running a standalone Whistle server
 
-Whistle tries to avoid using config and tries to keep things composable:
+To start a Whistle server, you need to add the `Whistle.HttpServer` child specification to your application supervisor like this:
 
 ```elixir
 # lib/my_app/application.ex
@@ -142,7 +142,7 @@ children = [
 ]
 ```
 
-This is your main Plug, here you can run any plugs you might need. In this case, we are just serving the Javascript file with `Plug.Static` and rendering a very basic `index.html` file that mounts our component.
+Now let's define the main Plug that is going to serve normal HTTP requests before we make any WebSocket connections, here you can run any plugs you might need. In this case, we are just serving the Javascript file with `Plug.Static` and rendering a very basic `index.html` file that mounts our component.
 
 ```elixir
 # lib/my_app_web/plug.ex
@@ -150,7 +150,7 @@ This is your main Plug, here you can run any plugs you might need. In this case,
 defmodule MyAppWeb.Plug do
   use Plug.Builder
 
-  # Mount will render an initial HTML and then get updated when the Websocket connects
+  # Mount will render an initial HTML and then get dynamically updated when changes happen
   defp index_html(conn) do
     """
     <!DOCTYPE html>
