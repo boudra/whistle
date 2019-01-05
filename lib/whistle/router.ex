@@ -1,5 +1,4 @@
 defmodule Whistle.Router do
-
   @registry Application.get_env(:whistle, :program_registry, Elixir.Registry)
   @supervisor Application.get_env(:whistle, :program_supervisor, Elixir.DynamicSupervisor)
 
@@ -20,6 +19,7 @@ defmodule Whistle.Router do
 
   defmacro __using__(path: path) do
     path_info = String.split(path, "/", trim: true)
+
     quote do
       # @behaviour Whistle.Router
       import Whistle.Router

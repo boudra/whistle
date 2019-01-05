@@ -1,5 +1,4 @@
 defmodule Whistle.ProgramRegistry do
-
   @registry Application.get_env(:whistle, :program_registry, Elixir.Registry)
   @supervisor Application.get_env(:whistle, :program_supervisor, Elixir.DynamicSupervisor)
 
