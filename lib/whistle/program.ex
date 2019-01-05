@@ -38,7 +38,7 @@ defmodule Whistle.Program do
     end
   end
 
-  def mount(router, program_name, params) do
+  def mount(conn, router, program_name, params) do
     encoded_params =
       params
       |> @json_library.encode!()
@@ -46,13 +46,28 @@ defmodule Whistle.Program do
 
     initial_view = render(router, program_name, params)
 
-    socket_handler = "ws://localhost:4000/ws"
-
     """
     <div
-      data-whistle-socket="#{socket_handler}"
+      data-whistle-socket="#{socket_handler_url(conn, router)}"
       data-whistle-program="#{program_name}"
       data-whistle-params="#{encoded_params}">#{initial_view}</div>
     """
   end
+
+  defp socket_handler_url(%Plug.Conn{} = conn, router) do
+    IO.iodata_to_binary([
+      http_to_ws_scheme(conn.scheme),
+      "://",
+      conn.host,
+      request_url_port(conn.scheme, conn.port),
+      router.__path()
+    ])
+  end
+
+  defp http_to_ws_scheme(:http), do: "ws"
+  defp http_to_ws_scheme(:https), do: "wss"
+
+  defp request_url_port(:http, 80), do: ""
+  defp request_url_port(:https, 443), do: ""
+  defp request_url_port(_, port), do: [?:, Integer.to_string(port)]
 end

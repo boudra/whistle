@@ -91,8 +91,6 @@
         var patches = data.dom_patches;
 
         patches.forEach(function(patch) {
-          console.log(patch);
-
           switch(patch[0]) {
             case 3:
               {

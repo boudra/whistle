@@ -7,6 +7,7 @@ defmodule Whistle.MixProject do
       version: "0.1.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
+      docs: docs(),
       deps: deps(),
       description: description(),
       package: package()
@@ -25,6 +26,19 @@ defmodule Whistle.MixProject do
 
   defp description() do
     "whistle"
+  end
+
+  defp docs() do
+    [
+      main: "readme",
+      extras: extras()
+    ]
+  end
+
+  defp extras() do
+    [
+      "README.md"
+    ]
   end
 
   # Run "mix help compile.app" to learn about applications.

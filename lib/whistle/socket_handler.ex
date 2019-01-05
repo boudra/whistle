@@ -5,14 +5,15 @@ defmodule Whistle.SocketHandler do
 
   @json_library Application.get_env(:whistle, :json_library, Jason)
 
-  def init(req, state) do
-    {:cowboy_websocket, req, {req, state}}
+  def init(req, {router, []}) do
+    conn = Plug.Cowboy.Conn.conn(req)
+    {:cowboy_websocket, req, {conn, router}}
   end
 
-  def websocket_init({_req, {router, []}}) do
+  def websocket_init({conn, router}) do
     {:ok,
      %{
-       socket: %Socket{},
+       socket: %Socket{conn: conn},
        router: router,
        programs: %{}
      }}

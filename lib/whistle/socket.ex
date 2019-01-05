@@ -1,9 +1,10 @@
 defmodule Whistle.Socket do
   alias Whistle.Socket
 
-  defstruct assigns: %{}
+  defstruct conn: nil, assigns: %{}
 
   @type t :: %Socket{
+          conn: Plug.Conn.t(),
           assigns: map()
         }
 

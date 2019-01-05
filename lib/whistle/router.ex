@@ -18,10 +18,19 @@ defmodule Whistle.Router do
     Supervisor.child_spec(default, [])
   end
 
-  defmacro __using__(_opts) do
+  defmacro __using__(path: path) do
+    path_info = String.split(path, "/", trim: true)
     quote do
       # @behaviour Whistle.Router
       import Whistle.Router
+
+      def __path() do
+        unquote(path)
+      end
+
+      def __path_info() do
+        unquote(path_info)
+      end
     end
   end
 
