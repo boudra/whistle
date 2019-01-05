@@ -9,7 +9,6 @@ Example Chat Application: [boudra/whistle-chat](https://github.com/boudra/whistl
 
 Whistle is influenced by [The Elm Architecture](https://guide.elm-lang.org/architecture/), Whistle moves this architecture to the server and streams DOM changes to the client via WebSockets.
 
-
 Then navigate to http://localhost:4000/index.html to preview the app
 
 ## Installation
@@ -24,22 +23,22 @@ end
 
 ## Getting started
 
-All Whistle appplications are composed by three main components, and you can have as many as you want of any:
-
-| WebSocket handlers
-|--> Routers
-|----> Programs
-
-The router defines what program routes match to what programs, like this:
+The router defines the path of the Websocket listener and what routes match to what programs, like this:
 
 ```elixir
 # lib/my_app_web/program_router.ex
 
 defmodule MyAppWeb.ProgramRouter do
-  use Whistle.Router
+  use Whistle.Router, "/ws"
 
   match("counter", MyAppWeb.ExampleProgram, %{})
 end
+```
+
+```
++---------+          +-------------+                  +-----------+
+| Client  |  /ws ->  |   Router    |  chat:*lobby ->  |  Program  |
++---------+          +-------------+                  +-----------+
 ```
 
 The program is a module where we specify how to manage and render its state, here is a very simple example:
@@ -82,34 +81,59 @@ children = [
 ]
 ```
 
-Whistle provides a Http server module (with Plug + Cowboy2) that works out of the box, but it can also work alongside Phoenix.
+## Integrating Whistle with an existing Phoenix endpoint
 
-### Integrating Whistle with an existing Phoenix endpoint
+Whistle provides a Http server module (with **Plug & Cowboy2**) that works out of the box, but it can also work alongside Phoenix.
 
-Manually set the Cowboy dispatchers in you config as described [here](https://hexdocs.pm/phoenix/Phoenix.Endpoint.Cowboy2Adapter.html).
+All we need to do is add the router handlers to the Cowboy dispatch options, this is the important line, you need to list all your routers as an argument to `build_handlers/1`
+
+```elixir
+Whistle.HttpServer.build_handlers([MyAppWeb.ProgramRouter])
+```
+
+Here is an example:
 
 ```elixir
 config :myapp, MyAppWeb.Endpoint,
   http: [dispatch: [
-          {:_, Whistle.SocketHandler.build_handlers([MyAppWeb.ProgramRouter]) ++ [
+          {:_, Whistle.HttpServer.build_handlers([MyAppWeb.ProgramRouter]) ++ [
               {:_, Phoenix.Endpoint.Cowboy2Handler, {MyAppWeb.Endpoint, []}}
             ]}]]
 ```
 
-### Running a standalone Whistle Http server
+Check out the [Phoenix.CowBoy2.Adapter docs](https://hexdocs.pm/phoenix/Phoenix.Endpoint.Cowboy2Adapter.html) for more info.
+
+## Running a standalone Whistle Http server
+
+Whistle tries to avoid using config and tries to keep things composable:
 
 ```elixir
 # lib/my_app/application.ex
 
 children = [
   {Whistle.HttpServer, [
+    http: [port: 4000],
     plug: MyAppWeb.Plug, # Specify your own Plug to be called
-    scheme: :http,
-    port: 4000,
-    socket_handlers: %{
-      "/ws" => MyAppWeb.ProgramRouter
-    }
+    routers: [MyAppWeb.ProgramRouter]
   ]}
+]
+```
+
+You can always define and use a config yourself if you wish:
+
+```elixir
+# config/dev.exs
+
+config :my_app, :whistle_http, [
+  http: [port: 4000],
+  plug: MyAppWeb.Plug, # Specify your own Plug to be called
+  routers: [MyAppWeb.ProgramRouter]
+]
+
+# lib/my_app/application.ex
+
+children = [
+  {Whistle.HttpServer, Application.get_env(:my_app, :whistle_http)}
 ]
 ```
 
@@ -122,7 +146,7 @@ defmodule MyAppWeb.Plug do
   use Plug.Builder
 
   # Mount will render an initial HTML and then get updated when the Websocket connects
-  defp index_html() do
+  defp index_html(conn) do
     """
     <!DOCTYPE html>
     <html lang="en">
@@ -131,7 +155,7 @@ defmodule MyAppWeb.Plug do
       <title></title>
     </head>
     <body>
-      #{Whistle.Program.mount(MyAppWeb.ProgramRouter, "counter", %{})}
+      #{Whistle.Program.mount(conn, MyAppWeb.ProgramRouter, "counter", %{})}
       <script src="/js/whistle.js"></script>
     </body>
     </html>
@@ -151,7 +175,7 @@ defmodule MyAppWeb.Plug do
   def index(conn, _opts) do
     conn
     |> put_resp_content_type("text/html")
-    |> send_resp(200, index_html())
+    |> send_resp(200, index_html(conn))
   end
 end
 ```
