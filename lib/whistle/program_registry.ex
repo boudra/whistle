@@ -1,15 +1,19 @@
 defmodule Whistle.ProgramRegistry do
+
+  @registry Application.get_env(:whistle, :program_registry, Elixir.Registry)
+  @supervisor Application.get_env(:whistle, :program_supervisor, Elixir.DynamicSupervisor)
+
   def start_program(router, name, program, params) do
     spec = {
       Whistle.ProgramInstance,
       {router, name, program, params}
     }
 
-    DynamicSupervisor.start_child(Module.concat(router, Supervisor), spec)
+    @supervisor.start_child(Module.concat(router, Supervisor), spec)
   end
 
   def ensure_started(router, name, program, params) do
-    case Registry.whereis_name({Module.concat(router, Registry), name}) do
+    case @registry.whereis_name({Module.concat(router, Registry), name}) do
       :undefined ->
         router
         |> build_group_name(name)

@@ -3,12 +3,14 @@ defmodule Whistle.ProgramInstance do
 
   alias Whistle.{ProgramRegistry, ProgramInstance}
 
+  @registry Application.get_env(:whistle, :program_registry, Elixir.Registry)
+
   defstruct router: nil, name: nil, program: nil, params: nil, state: %{}
 
   defp via(router, name) do
     registry = Module.concat(router, Registry)
 
-    {:via, Registry, {registry, name}}
+    {:via, @registry, {registry, name}}
   end
 
   def start_link(arg = {router, name, program, params}) do
@@ -109,7 +111,7 @@ defmodule Whistle.ProgramInstance do
   end
 
   def send_info(router, name, message) do
-    case Registry.whereis_name({Module.concat(router, Registry), name}) do
+    case @registry.whereis_name({Module.concat(router, Registry), name}) do
       :undefined ->
         :error
 
