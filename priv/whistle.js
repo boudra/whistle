@@ -42,8 +42,8 @@
   function renderVirtualDom(vdom) {
     var node = null;
 
-    if(vdom[0] == "text") {
-      node = document.createTextNode(vdom[2])
+    if(typeof vdom == "string") {
+      node = document.createTextNode(vdom)
     } else {
       node = document.createElement(vdom[0]);
       for (var key in vdom[1]) {
@@ -91,6 +91,8 @@
         var patches = data.dom_patches;
 
         patches.forEach(function(patch) {
+          console.log(patch);
+
           switch(patch[0]) {
             case 3:
               {
@@ -105,7 +107,7 @@
             case 4:
               {
                 var node = findNodeByPath(self.rootElement, patch[1]);
-                self.__callHooks("removingElement", oldNode);
+                self.__callHooks("removingElement", node);
                 node.remove(node);
               }
               break;
