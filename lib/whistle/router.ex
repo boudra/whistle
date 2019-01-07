@@ -17,6 +17,16 @@ defmodule Whistle.Router do
     Supervisor.child_spec(default, [])
   end
 
+  def url(%Plug.Conn{} = conn, router) do
+    IO.iodata_to_binary([
+      http_to_ws_scheme(conn.scheme),
+      "://",
+      conn.host,
+      request_url_port(conn.scheme, conn.port),
+      router.__path()
+    ])
+  end
+
   defmacro __using__(path: path) do
     path_info = String.split(path, "/", trim: true)
 
