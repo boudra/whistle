@@ -1,12 +1,16 @@
 # Whistle
 [![Hex.pm](https://img.shields.io/hexpm/v/whistle.svg)](https://hex.pm/packages/whistle) [![Build Status](https://travis-ci.org/boudra/whistle.svg?branch=master)](https://travis-ci.org/boudra/whistle) [![Inline docs](http://inch-ci.org/github/boudra/whistle.svg)](http://inch-ci.org/github/boudra/whistle) [![Coverage Status](https://coveralls.io/repos/github/boudra/whistle/badge.svg)](https://coveralls.io/github/boudra/whistle)
 
+-----------
+
 Whistle allows you to write interactive dynamic web apps entirely in Elixir, it manages the state of your app via Programs and streams the UI to the client via Websockets.
 
 
 - Documentation: [https://hexdocs.pm/whistle](https://hexdocs.pm/whistle)
 - Example Chat Application: [boudra/whistle-chat](https://github.com/boudra/whistle-chat)
 
+
+------
 
 ## Installation
 
