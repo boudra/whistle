@@ -52,7 +52,7 @@ const socket = Whistle.open("ws://localhost:4000/socket");
 const root = document.getElementById("target");
 const counter = socket.mount(root, "counter");
 
-counter.on("join", () {
+counter.on("mount", () {
   console.log("component mounted!");
 });
 ```
@@ -85,5 +85,26 @@ counter.addHook("button", {
   removingElement(node) {
     console.log("removing element");
   }
+});
+```
+
+# Sending and receiving messages
+
+```elixir
+def update("ping", state, session) do
+  {:reply, "pong", state, session}
+end
+```
+
+```js
+const socket = Whistle.open("ws://localhost:4000/socket");
+const counter = socket.mount(root, "counter");
+
+counter.on("mounted", () => {
+  counter.send("ping");
+});
+
+counter.on("receive", (msg) => {
+  assert(msg === "pong");
 });
 ```
