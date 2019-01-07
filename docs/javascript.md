@@ -28,11 +28,11 @@ You can use the method `open` for that, it takes the Websocket handler URL and i
 const socket = Whistle.open("ws://localhost:4000/socket");
 
 socket.on("connect", () {
-  # ...
+  // ...
 });
 
 socket.on("disconnect", () {
-  # ...
+  // ...
 });
 ```
 
