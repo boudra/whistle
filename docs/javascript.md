@@ -90,6 +90,8 @@ counter.addHook("button", {
 
 # Sending and receiving messages
 
+You can also use the `Whistle.Program` object to communicate with the server, in case you need to send a message that is not triggered via a DOM event, a message can be anything that can be JSON encoded.
+
 ```elixir
 def update("ping", state, session) do
   {:reply, "pong", state, session}
