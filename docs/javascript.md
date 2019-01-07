@@ -49,7 +49,7 @@ counter.on("join", () {
 
 # Lifecycle Hooks
 
-Lifecycle hooks are a way to hook functions when elements are created or deleted, this way you can attach events or do anything you would normally do in a client side framework.
+Lifecycle hooks are a way get notified when elements are created or deleted, this way you can attach events or do anything you would normally do in a client side framework:
 
 ```js
 const socket = Whistle.open("ws://localhost:4000/socket");
