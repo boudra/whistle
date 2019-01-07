@@ -37,6 +37,8 @@ const socket = Whistle.open(routerUrl);
 
 # Mounting programs
 
+You can mount your programs manually like this:
+
 ```js
 const socket = Whistle.open("ws://localhost:4000/socket");
 const root = document.getElementById("target");
@@ -47,7 +49,7 @@ counter.on("join", () {
 });
 ```
 
-# Lifecycle Hooks
+# Lifecycle hooks
 
 Lifecycle hooks are a way get notified when elements are created or deleted, this way you can attach events or do anything you would normally do in a client side framework.
 
