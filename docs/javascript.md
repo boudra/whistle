@@ -49,7 +49,14 @@ counter.on("join", () {
 
 # Lifecycle Hooks
 
-Lifecycle hooks are a way get notified when elements are created or deleted, this way you can attach events or do anything you would normally do in a client side framework:
+Lifecycle hooks are a way get notified when elements are created or deleted, this way you can attach events or do anything you would normally do in a client side framework.
+
+Call `addHook()` with the ID of the element as a first argument and an object with the desired callbacks as a second argument:
+
+```elixir
+# view
+Html.button([id: "button"], "click me!")
+```
 
 ```js
 const socket = Whistle.open("ws://localhost:4000/socket");
