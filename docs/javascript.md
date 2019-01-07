@@ -92,11 +92,6 @@ counter.addHook("button", {
 
 You can also use the `Whistle.Program` object to communicate with the server, in case you need to send a message that is not triggered via a DOM event, a message can be anything that can be JSON encoded.
 
-```elixir
-def update("ping", state, session) do
-  {:reply, "pong", state, session}
-end
-```
 
 ```js
 const socket = Whistle.open("ws://localhost:4000/socket");
@@ -109,4 +104,12 @@ counter.on("mounted", () => {
 counter.on("receive", (msg) => {
   assert(msg === "pong");
 });
+```
+
+You can listen and reply to the message in the update function:
+
+```elixir
+def update("ping", state, session) do
+  {:reply, "pong", state, session}
+end
 ```
