@@ -79,7 +79,6 @@ const counter = socket.mount(root, "counter");
 counter.addHook("button", {
   creatingElement(node) {
     node.addEventListener("click", e => {
-      e.preventDefault();
       alert("hello world!");
     });
   },
