@@ -26,6 +26,14 @@ You can use the method `open` for that, it takes the Websocket handler URL and i
 
 ```js
 const socket = Whistle.open("ws://localhost:4000/socket");
+
+socket.on("connect", () {
+  # ...
+});
+
+socket.on("disconnect", () {
+  # ...
+});
 ```
 
 Remember that you can always use the helper to get the router URL:
