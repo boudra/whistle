@@ -28,6 +28,13 @@ You can use the method `open` for that, it takes the Websocket handler URL and i
 const socket = Whistle.open("ws://localhost:4000/socket");
 ```
 
+Remember that you can always use the helper to get the router URL:
+
+```js
+const routerUrl = "<%= Whistle.Router.url(conn, MyAppWeb.ProgramRouter) %>";
+const socket = Whistle.open(routerUrl);
+```
+
 # Mounting programs
 
 ```js
