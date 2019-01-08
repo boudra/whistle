@@ -53,11 +53,4 @@ defmodule Whistle.Program do
       data-whistle-params="#{encoded_params}">#{initial_view}</div>
     """
   end
-
-  defp http_to_ws_scheme(:http), do: "ws"
-  defp http_to_ws_scheme(:https), do: "wss"
-
-  defp request_url_port(:http, 80), do: ""
-  defp request_url_port(:https, 443), do: ""
-  defp request_url_port(_, port), do: [?:, Integer.to_string(port)]
 end

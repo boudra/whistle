@@ -27,6 +27,13 @@ defmodule Whistle.Router do
     ])
   end
 
+  defp http_to_ws_scheme(:http), do: "ws"
+  defp http_to_ws_scheme(:https), do: "wss"
+
+  defp request_url_port(:http, 80), do: ""
+  defp request_url_port(:https, 443), do: ""
+  defp request_url_port(_, port), do: [?:, Integer.to_string(port)]
+
   defmacro __using__(path: path) do
     path_info = String.split(path, "/", trim: true)
 
