@@ -3,7 +3,7 @@ defmodule Whistle.SocketHandler do
 
   alias Whistle.{ProgramInstance, ProgramRegistry, ProgramConnection, Socket}
 
-  @json_library Application.get_env(:whistle, :json_library, Jason)
+  @json_library Whistle.Config.json_library()
 
   def init(req, {router, []}) do
     conn = Plug.Cowboy.Conn.conn(req)
