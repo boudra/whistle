@@ -96,7 +96,7 @@ Now all you need to do is add the router in your supervision tree, a router will
 # lib/my_app/application.ex
 
 children = [
-  {Whistle.Router, MyAppWeb.ProgramRouter}
+  {MyAppWeb.ProgramRouter, []}
 ]
 ```
 
