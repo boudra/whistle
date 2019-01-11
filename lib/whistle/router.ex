@@ -2,7 +2,7 @@ defmodule Whistle.Router do
   @registry Application.get_env(:whistle, :program_registry, Elixir.Registry)
   @supervisor Application.get_env(:whistle, :program_supervisor, Elixir.DynamicSupervisor)
 
-  def child_spec(router) do
+  def child_spec({router, _args}) do
     children = [
       {@registry, [keys: :unique, name: Module.concat(router, Registry)]},
       {@supervisor, [name: Module.concat(router, Supervisor), strategy: :one_for_one]}
@@ -40,6 +40,10 @@ defmodule Whistle.Router do
     quote do
       # @behaviour Whistle.Router
       import Whistle.Router
+
+      def child_spec(args) do
+        Whistle.Router.child_spec({__MODULE__, args})
+      end
 
       def __path() do
         unquote(path)
