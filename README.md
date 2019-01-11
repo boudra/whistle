@@ -8,7 +8,7 @@ Whistle allows you to write interactive dynamic web apps entirely in Elixir, it 
 - Documentation: [https://hexdocs.pm/whistle](https://hexdocs.pm/whistle)
 - Example Chat Application: [boudra/whistle-chat](https://github.com/boudra/whistle-chat)
 
-:warning: *This project is no way finished to be used in production* :warning:
+:warning: **This project is in heavy development, it's not production ready and APIs will change** :warning:
 
 ## Roadmap
 
