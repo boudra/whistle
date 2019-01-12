@@ -46,13 +46,17 @@ defmodule Whistle.ProgramInstance do
         _from,
         instance = %{router: router, name: name, program: program, state: state}
       ) do
-    IEx.Helpers.r(program)
+    # IEx.Helpers.r(program)
 
     case program.update(message, state, session) do
+      {:reply, new_state, new_session, reply} ->
+        ProgramRegistry.broadcast(router, name, {:updated, name})
+        {:reply, {:ok, new_session, [reply]}, %{instance | state: new_state}}
+
       {:ok, new_state, new_session} ->
         ProgramRegistry.broadcast(router, name, {:updated, name})
 
-        {:reply, {:ok, new_session}, %{instance | state: new_state}}
+        {:reply, {:ok, new_session, []}, %{instance | state: new_state}}
 
       error = {:error, _} ->
         {:reply, error, instance}
@@ -60,7 +64,7 @@ defmodule Whistle.ProgramInstance do
   end
 
   def handle_call({:view, session}, _from, instance = %{program: program, state: state}) do
-    IEx.Helpers.r(program)
+    # IEx.Helpers.r(program)
 
     {:reply, {0, program.view(state, session)}, instance}
   end

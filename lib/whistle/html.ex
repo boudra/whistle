@@ -22,6 +22,14 @@ defmodule Whistle.Html do
     node("p", attributes, children)
   end
 
+  def a(attributes, children) do
+    node("a", attributes, children)
+  end
+
+  def h1(attributes, children) do
+    node("h1", attributes, children)
+  end
+
   def button(attributes, children) do
     node("button", attributes, children)
   end
@@ -46,6 +54,34 @@ defmodule Whistle.Html do
     node("form", attributes, children)
   end
 
+  def html(attributes, children) do
+    node("html", attributes, children)
+  end
+
+  def head(attributes, children) do
+    node("head", attributes, children)
+  end
+
+  def body(attributes, children) do
+    node("body", attributes, children)
+  end
+
+  def meta(attributes) do
+    node("meta", attributes, [])
+  end
+
+  def title(children) do
+    node("title", [], children)
+  end
+
+  def script(attributes) do
+    node("script", attributes, [])
+  end
+
+  def script(attributes, children) do
+    node("script", attributes, children)
+  end
+
   def br() do
     node("br", [], [])
   end
@@ -56,5 +92,9 @@ defmodule Whistle.Html do
 
   def lazy(fun, args) do
     {:lazy, fun, args}
+  end
+
+  def program(name, params) do
+    {:program, name, params}
   end
 end

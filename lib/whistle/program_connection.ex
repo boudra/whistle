@@ -22,8 +22,8 @@ defmodule Whistle.ProgramConnection do
   def update(program = %{router: router, name: name, session: session}, {handler, args}) do
     with {:ok, message} <- handler_message(program, handler, args) do
       try do
-        {:ok, new_session} = ProgramInstance.update(router, name, message, session)
-        {:ok, %{program | session: new_session}}
+        {:ok, new_session, reply} = ProgramInstance.update(router, name, message, session)
+        {:ok, %{program | session: new_session}, reply}
       catch
         :exit, value ->
           {:error, :program_crash}

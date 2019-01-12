@@ -45,6 +45,12 @@ defmodule Whistle.ProgramRegistry do
     |> :pg2.join(pid)
   end
 
+  def unsubscribe(router, name, pid) do
+    router
+    |> build_group_name(name)
+    |> :pg2.leave(pid)
+  end
+
   def broadcast(router, name, message) do
     router
     |> build_group_name(name)

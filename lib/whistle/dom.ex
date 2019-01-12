@@ -13,6 +13,7 @@ defmodule Whistle.Dom do
   @remove_attribute 6
   @add_event_handler 7
   @remove_event_handler 8
+  @replace_program 9
 
   def diff(element1, element2) do
     state = %Diff{}
@@ -63,13 +64,26 @@ defmodule Whistle.Dom do
     end
   end
 
+
   def diff(state, path, {_, nil}, {key, new_node}) do
     add_node(state, path, key, new_node)
   end
 
+  def diff(state, path, {key, {:program, _, _} = node}, {key, {:program, _, _} = node}) do
+    state
+  end
+
+  def diff(state, path, {key, {:program, _, _}}, {key, {:program, program, params}}) do
+    add_patches(state, [[@replace_program, path ++ [key], program, params]])
+  end
+
+  def diff(state, path, {key, node}, {key, new_node = {:program, _, _}}) do
+    replace_node(state, path, key, new_node)
+  end
+
   # TODO: create @remove_event_handler patches for the DOM
   def diff(state, path, {key, node}, {key, nil}) do
-    add_patches(state, [[@remove_node, path ++ [key]]])
+    %{state | patches: [[@remove_node, path ++ [key]] | state.patches]}
   end
 
   def diff(state, path, {key, {tag, _, _}}, {key, new_node = {new_tag, _, _}})
@@ -298,6 +312,10 @@ defmodule Whistle.Dom do
     |> Map.put(:key, key)
   end
 
+  def extract_event_handlers(_path, node = {_key, {:program, _, _}}) do
+    {[], node}
+  end
+
   def extract_event_handlers(_path, node = {_key, text}) when is_binary(text) do
     {[], node}
   end
@@ -329,6 +347,10 @@ defmodule Whistle.Dom do
       end)
 
     {all_handlers, {key, {tag, new_attributes, new_children}}}
+  end
+
+  def encode_node(state, path, {key, {:program, program, params}}) do
+    ["program", program, params]
   end
 
   def encode_node(state, path, {key, text}) when is_binary(text) do
@@ -371,19 +393,35 @@ defmodule Whistle.Dom do
     []
   end
 
-  def from_floki_attributes([{"data-" <> _, value} | rest]) do
+  def from_floki_attributes([[key = "data-whistle-navigation", value] | rest]) do
+    [{String.to_existing_atom(key), value} | from_floki_attributes(rest)]
+  end
+
+  def from_floki_attributes([["data-" <> _, value] | rest]) do
     from_floki_attributes(rest)
   end
 
-  def from_floki_attributes([{key, value} | rest]) do
+  def from_floki_attributes([[key, value] | rest]) do
     [{String.to_existing_atom(key), value} | from_floki_attributes(rest)]
+  end
+
+  def from_floki_element(nil) do
+    nil
   end
 
   def from_floki_element(element) when is_binary(element) do
     Whistle.Html.text(element)
   end
 
-  def from_floki_element({tag, attributes, children}) do
+  def from_floki_element(["program", program, params]) do
+    {:program, program, params}
+  end
+
+  def from_floki_element(["script", attributes, [""]]) do
+    from_floki_element(["script", attributes, []])
+  end
+
+  def from_floki_element([tag, attributes, children]) do
     children =
       children
       |> Enum.with_index()
@@ -426,8 +464,8 @@ defmodule Whistle.Dom do
       |> Enum.map(&node_to_string/1)
       |> Enum.join("")
 
-    if tag in ["input", "br"] and children == "" do
-      ~s(<#{tag} #{attributes_to_string(attributes)} />)
+    if tag in ["input", "hr", "br", "meta"] and children == "" do
+      ~s(<#{tag} #{attributes_to_string(attributes)}/>)
     else
       ~s(<#{tag} #{attributes_to_string(attributes)}>#{children}</#{tag}>)
     end

@@ -54,11 +54,11 @@ defmodule DomTest do
            ]
 
     assert diff_patches(Html.p([id: "id"], []), nil) == [
-             [@remove_node, [0], []]
+             [@remove_node, [0]]
            ]
 
     assert diff_patches(Html.p([id: "id"], [Html.text("")]), Html.p([id: "id"], [])) == [
-             [@remove_node, [0, 0], []]
+             [@remove_node, [0, 0]]
            ]
   end
 

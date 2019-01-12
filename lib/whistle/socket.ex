@@ -8,6 +8,10 @@ defmodule Whistle.Socket do
           assigns: map()
         }
 
+  def new(%Plug.Conn{} = conn) do
+    %Socket{conn: conn}
+  end
+
   def assign(socket = %{assigns: assigns}, key, value) do
     %{socket | assigns: Map.put(assigns, key, value)}
   end

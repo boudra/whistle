@@ -16,7 +16,6 @@ defmodule Whistle.HttpServer do
             [{Plug.Cowboy, [scheme: scheme, plug: nil, options: cowboy_opts]}]
         end
       end)
-      |> IO.inspect()
 
     default = %{
       id: __MODULE__,
