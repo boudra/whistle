@@ -12,15 +12,20 @@ Whistle allows you to write interactive dynamic web apps entirely in Elixir, it 
 
 ## Roadmap
 
-What has been done and what's left to be done:
+What has been done, and what is left to do:
 
 - [x] Program orchestrating, error recovery
+- [x] Distributed programs via Horde
 - [x] Program and client message communication and broadcasting
 - [x] Lazy VDOM trees
 - [x] Initial render via HTTP, then pickup updates via WebSockets
+- [x] Full screen program mode with browser history to build Single Page Applications with Server Side Rendering :rocket:
+- [x] Embed programs inside of other programs (like React components)
+- [ ] Built-in Session persistence helpers
+- [ ] Rewrite front-end library in ES6+/Typescript for easier development
+- [ ] Write front-end library tests
 - [ ] DOM list patching (reordering, inserting)
-- [ ] HTML string to VDOM tree in the view
-- [ ] Built in HTTP router to build entire web apps, with SSR and WebSocket dynamic updates
+- [ ] HTML string or EEx template file to VDOM tree in the view
 
 ## Installation
 
