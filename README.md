@@ -14,7 +14,7 @@ Whistle allows you to write interactive dynamic web apps entirely in Elixir, it 
 
 What has been done, and what is left to do:
 
-- [x] Program orchestrating, error recovery
+- [x] Program orchestrating, program error recovery, client auto-reconnections
 - [x] Distributed programs via Horde
 - [x] Program and client message communication and broadcasting
 - [x] Lazy VDOM trees
