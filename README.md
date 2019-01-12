@@ -17,7 +17,7 @@ What has been done, and what is left to do:
 - [x] Program orchestrating, program error recovery, client auto-reconnections
 - [x] Distributed programs via Horde
 - [x] Program and client message communication and broadcasting
-- [x] Lazy VDOM trees
+- [x] Lazy Virtual DOM trees to optimize diffing
 - [x] Initial render via HTTP, then pickup updates via WebSockets
 - [x] Full screen program mode with browser history to build Single Page Applications with Server Side Rendering :rocket:
 - [x] Embed programs inside of other programs (like React components)
