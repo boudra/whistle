@@ -129,6 +129,21 @@ config :myapp, MyAppWeb.Endpoint,
 
 Check out the [Phoenix.CowBoy2.Adapter docs](https://hexdocs.pm/phoenix/Phoenix.Endpoint.Cowboy2Adapter.html) for more info.
 
+Once the handlers have been added, you can embed a program in your views like so:
+
+```elixir
+<%= raw(Whistle.Program.embed(conn, MyAppWeb.ProgramRouter, "counter", %{})) %>
+```
+
+Make sure you include the [/docs/javascript.md](Javscript) library, you can also embed the program using the Javascript API:
+
+```javascript
+import { Whistle } from 'js/whistle';
+const socket = Whistle.open("ws://localhost:4000/socket");
+const target = document.getElementById("target");
+const program = socket.mount(target, "counter", {});
+```
+
 ## Running a standalone Whistle server
 
 To start a Whistle server, you need to add the `Whistle.HttpServer` child specification to your application supervisor like this:
