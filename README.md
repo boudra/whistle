@@ -135,7 +135,7 @@ Once the handlers have been added, you can embed a program in your views like so
 <%= raw(Whistle.Program.embed(conn, MyAppWeb.ProgramRouter, "counter", %{})) %>
 ```
 
-Make sure you include the [/docs/javascript.md](Javscript) library, you can also embed the program using the Javascript API:
+Make sure you include the [Javscript](/docs/javascript.md) library, you can also embed the program using the Javascript API:
 
 ```javascript
 import { Whistle } from 'js/whistle';
