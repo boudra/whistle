@@ -1,6 +1,9 @@
 (function(exports) {
   var sockets = {};
 
+  exports.log = console.log;
+  exports.log = function() {};
+
   exports.open = function(url) {
     if(sockets[url]) {
       return sockets[url];
@@ -26,6 +29,18 @@
     });
   });
 
+  function removeNodeEventListener(handler) {
+    exports.log("removing handler", handler);
+    if(handler.type == "input") {
+      handler.node.removeEventListener("input", handler.fun);
+      handler.node.removeEventListener("change", handler.fun);
+    } else if(handler.type == "history") {
+      handler.node.removeEventListener("popstate", handler.fun);
+    } else {
+      handler.node.removeEventListener(handler.type, handler.fun);
+    }
+  }
+
   function setAttribute(node, key, value) {
     if(key == "value") {
       node.value = value;
@@ -48,40 +63,6 @@
     }, parent);
   }
 
-  function toVirtualDom(node) {
-    if(!node) {
-      return null;
-    }
-
-    if(node.nodeType == 3) {
-      return node.nodeValue;
-    }
-
-    var tag = node.nodeName.toLowerCase();
-
-    if(tag == "whistle-program") {
-      return [
-        "program",
-        node.getAttribute("data-whistle-program"),
-        JSON.parse(node.getAttribute("data-whistle-params"))
-      ];
-    }
-
-    var attributes = Array.prototype.map.call(node.attributes, function(e) {
-      var value = e.value;
-      if(value === "true") {
-        value = true;
-      }
-      return [e.name, value];
-    });
-
-    var children = Array.prototype.map.call(node.childNodes, function(child) {
-      return toVirtualDom(child);
-    });
-
-    return [tag, attributes, children];
-  }
-
   function Program(socket, elem, route, params) {
     var self = this;
 
@@ -94,22 +75,200 @@
     this.socket = socket;
     this.params = params || {};
     this.rootElement = elem;
-    this.listeners = [];
-    this.eventHandlers = {};
+    this.eventListeners = {
+      message: [],
+      join: []
+    };
+    this.eventHandlers = [];
     this.id = null;
-    this.state = 0;
+    this.state = 0; // 0 = none, 1 = joining, 2 = joined, 3 = leaving, 4 = left
     this.joinResponseHandler = null;
 
-    this.leave = function() {
-      this.state = 2;
-      if(this.id) {
-        this.socket.send({
-          type: "leave",
-          program: this.id
+    this.on = function(event, fun) {
+      var self = this;
+      var newFun = null;
+
+      if(event == "join") {
+      } else if(event == "message") {
+        newFun = this.socket.on("message", function(data) {
+          if(data.program == self.id) {
+            fun.call(self, data);
+          }
         });
-        this.state = 3;
+      }
+
+      this.eventListeners[event].push(newFun);
+    }
+
+    this.leave = function() {
+      // set status to leaving
+      this.state = 3;
+      if(this.id) {
+        exports.log("leaving", this.name, this.id);
+        this.socket.send({type: "leave", program: this.id});
+        // left
+        this.state = 4;
       }
     }
+
+    this.handleMessage = function(data) {
+      if(data.type == "render") {
+        var patches = data.dom_patches;
+
+        patches.forEach(function(patch) {
+          exports.log(patch);
+
+          switch(patch[0]) {
+            case 2:
+              {
+                var parent = findNodeByPath(self.rootElement, patch[1]);
+                var node = renderVirtualDom(patch[2]);
+                parent.appendChild(node);
+                self.callHooks("creatingElement", node);
+              }
+              break;
+
+            case 3:
+              {
+                var oldNode = findNodeByPath(self.rootElement, patch[1]);
+                self.unmountPrograms(oldNode);
+                self.callHooks("removingElement", oldNode);
+
+                var node = renderVirtualDom(patch[2]);
+                oldNode.replaceWith(node);
+                self.callHooks("creatingElement", node);
+              }
+              break;
+
+            case 4:
+              {
+                var node = findNodeByPath(self.rootElement, patch[1]);
+                self.unmountPrograms(node);
+                self.callHooks("removingElement", node);
+                node.remove();
+              }
+              break;
+
+            case 5:
+              {
+                var replaceTarget = findNodeByPath(self.rootElement, patch[1]);
+                setAttribute(replaceTarget, patch[2][0], patch[2][1]);
+              }
+              break;
+
+            case 7:
+              {
+                var node = findNodeByPath(self.rootElement, patch[1]);
+                var handler = patch[2];
+                var key = patch[1].join(".");
+                var fun = null;
+
+                if(handler.event === "history") {
+                  node = window;
+                  fun = function(e) {
+                    self.socket.send({
+                      type: "event",
+                      program: self.id,
+                      handler: key + "." + handler.event,
+                      args: [e.state.path]
+                    });
+                  }
+                  node.addEventListener("popstate", fun);
+                } else {
+                  fun = function(e) {
+                    if(handler.prevent_default) {
+                      e.preventDefault();
+                    }
+
+                    var args = [];
+
+                    if(["change", "input", "submit"].indexOf(e.type) >= 0) {
+                      if(e.target.tagName.toLowerCase() == "form") {
+                        var formValue =
+                          Array.prototype.reduce.call(e.target.elements, function(obj, node) {
+                            if(node.name && node.name.length > 0) {
+                              obj[node.name] = node.value;
+                              return obj;
+                            } else {
+                              return obj;
+                            }
+                          }, {});
+
+                        args = [formValue];
+                      } else {
+                        args = [e.target.value];
+                      }
+                    }
+
+                    self.socket.send({
+                      type: "event",
+                      program: self.id,
+                      handler: key + "." + handler.event,
+                      args: args
+                    });
+                  };
+
+                  if(handler.event == "input") {
+                    fun = debounceInputEvent(fun, 250);
+
+                    node.addEventListener("input", fun);
+                    node.addEventListener("change", fun);
+                  } else {
+                    node.addEventListener(handler.event, fun);
+                  }
+                }
+
+                self.eventHandlers.push({
+                  type: handler.event,
+                  fun: fun,
+                  node: node
+                });
+              }
+              break;
+
+            // remove_event_handler
+            case 8:
+              {
+                var node = findNodeByPath(self.rootElement, patch[1]);
+                var event = patch[2];
+                var index = -1;
+
+                for(var i = 0; i < self.eventHandlers.length; i++) {
+                  if(self.eventHandlers[i].node === node &&
+                    self.eventHandlers[i].type == event) {
+                    index = i;
+                    break;
+                  }
+                }
+
+                if(index >= 0) {
+                  var handler = self.eventHandlers[index];
+                  removeNodeEventListener(handler);
+                  self.eventHandlers.splice(index, 1);
+                }
+              }
+              break;
+
+            case 9:
+              {
+                var node = findNodeByPath(self.rootElement, patch[1]);
+                self.socket.programs.forEach(function(program) {
+                  if(program.rootElement == node) {
+                    self.socket.removeProgram(program.id);
+                  }
+                });
+
+                self.socket.mount(node, patch[2], patch[3])
+              }
+              break;
+          }
+        });
+      } else if(data.type == "msg" && data.payload[0] == "whi_navigate") {
+        window.history.pushState({path: data.payload[1]}, "", data.payload[1]);
+      }
+    };
+
+    this.on("message", this.handleMessage);
 
     this.join = function() {
       if(this.joinResponseHandler) {
@@ -134,173 +293,25 @@
         dom: initialDom
       });
 
-      this.joinResponseHandler = function(data) {
-        if(data.requestId == requestId) {
-          self.id = data.programId;
-          self.socket.removeListener("message", self.joinResponseHandler);
 
-          if(self.state == 2) {
+      var joinResponseHandler = this.socket.on("message", function (data) {
+        // TODO: check join error
+        if(data.requestId == requestId) {
+          exports.log("joined", self.name, data.programId);
+
+          self.id = data.programId;
+          self.socket.removeListener("message", joinResponseHandler);
+
+          // tried to leave and we didn't join yet, so leave immediately
+          if(self.state == 3) {
             self.leave();
             return;
           }
 
-          self.state = 1;
-
-          self.joinResponseHandler = null;
-
-          var msgListener = self.socket.onMessageFor(self.id, function(data) {
-            if(data.type == "render") {
-              var patches = data.dom_patches;
-
-              patches.forEach(function(patch) {
-                switch(patch[0]) {
-                  case 2:
-                    {
-                      var parent = findNodeByPath(self.rootElement, patch[1]);
-                      var node = renderVirtualDom(patch[2]);
-                      parent.appendChild(node);
-                      self.callHooks("creatingElement", node);
-                    }
-                    break;
-
-                  case 3:
-                    {
-                      var oldNode = findNodeByPath(self.rootElement, patch[1]);
-                      self.unmountPrograms(oldNode);
-                      self.callHooks("removingElement", oldNode);
-
-                      var node = renderVirtualDom(patch[2]);
-                      oldNode.replaceWith(node);
-                      self.callHooks("creatingElement", node);
-                    }
-                    break;
-
-                  case 4:
-                    {
-                      var node = findNodeByPath(self.rootElement, patch[1]);
-                      self.unmountPrograms(node);
-                      self.callHooks("removingElement", node);
-                      node.remove();
-                    }
-                    break;
-
-                  case 5:
-                    {
-                      var replaceTarget = findNodeByPath(self.rootElement, patch[1]);
-                      setAttribute(replaceTarget, patch[2][0], patch[2][1]);
-                    }
-                    break;
-
-                  case 7:
-                    {
-                      var node = findNodeByPath(self.rootElement, patch[1]);
-                      var handler = patch[2];
-                      var key = patch[1].join(".");
-                      var fun = null;
-
-                      if(handler.event === "history") {
-                        fun = function(e) {
-                          self.socket.send({
-                            type: "event",
-                            program: self.id,
-                            handler: key + "." + handler.event,
-                            args: [e.state.path]
-                          });
-                        }
-
-                        window.addEventListener("popstate", fun);
-                      } else {
-                        fun = function(e) {
-                          if(handler.prevent_default) {
-                            e.preventDefault();
-                          }
-
-                          var args = [];
-
-                          if(["change", "input", "submit"].indexOf(e.type) >= 0) {
-                            if(e.target.tagName.toLowerCase() == "form") {
-                              var formValue =
-                                Array.prototype.reduce.call(e.target.elements, function(obj, node) {
-                                  if(node.name && node.name.length > 0) {
-                                    obj[node.name] = node.value;
-                                    return obj;
-                                  } else {
-                                    return obj;
-                                  }
-                                }, {});
-
-                              args = [formValue];
-                            } else {
-                              args = [e.target.value];
-                            }
-                          }
-
-                          self.socket.send({
-                            type: "event",
-                            program: self.id,
-                            handler: key + "." + handler.event,
-                            args: args
-                          });
-                        };
-
-                        if(handler.event == "input") {
-                          fun = debounceInputEvent(fun, 250);
-
-                          node.addEventListener("input", fun);
-                          node.addEventListener("change", fun);
-                        } else {
-                          node.addEventListener(handler.event, fun);
-                        }
-                      }
-
-                      self.eventHandlers[key + "." + handler.event] = fun;
-                    }
-                    break;
-
-                    // remove_event_handler
-                  case 8:
-                    {
-                      var node = findNodeByPath(self.rootElement, patch[1]);
-                      var event = patch[2];
-                      var key = patch[1].join(".");
-                      var fun = self.eventHandlers[key + "." + event];
-
-                      if(event == "input") {
-                        node.removeEventListener("input", fun);
-                        node.removeEventListener("change", fun);
-                      } else if(event == "history") {
-                        window.removeEventListener("popstate", fun);
-                      } else {
-                        node.removeEventListener(event, fun);
-                      }
-                    }
-                    break;
-
-                  case 9:
-                    {
-                      var node = findNodeByPath(self.rootElement, patch[1]);
-                      self.socket.programs.forEach(function(program) {
-                        if(program.rootElement == node) {
-                          self.socket.removeProgram(program.id);
-                        }
-                      });
-                      setTimeout(function() {
-                        self.socket.mount(node, patch[2], patch[3])
-                      }, 0);
-                    }
-                    break;
-                }
-              });
-            } else if(data.type == "msg" && data.payload[0] == "whi_navigate") {
-              window.history.pushState({path: data.payload[1]}, "", data.payload[1]);
-            }
-          });
-
-          self.listeners.push(["message", msgListener]);
+          // joining
+          self.state = 2;
         }
-      };
-
-      this.socket.on("message", this.joinResponseHandler);
+      });
     };
 
     function renderVirtualDom(vdom) {
@@ -330,9 +341,55 @@
       return node;
     }
 
+    function toVirtualDom(node) {
+      if(!node) {
+        return null;
+      }
+
+      if(node.nodeType == 3) {
+        return node.nodeValue;
+      }
+
+      var tag = node.nodeName.toLowerCase();
+
+      if(tag == "whistle-program") {
+        return [
+          "program",
+          node.getAttribute("data-whistle-program"),
+          JSON.parse(node.getAttribute("data-whistle-params"))
+        ];
+      }
+
+      var attributes = Array.prototype.map.call(node.attributes, function(e) {
+        var value = e.value;
+        if(value === "true") {
+          value = true;
+        }
+        return [e.name, value];
+      });
+
+      // attributes = self.eventHandlers.reduce(function(acc, handler) {
+      //   if(handler.node === node) {
+      //     return acc.concat([["on", handler.type]]);
+      //   }
+      //   return acc;
+      // }, attributes);
+
+      var children = Array.prototype.map.call(node.childNodes, function(child) {
+        return toVirtualDom(child);
+      });
+
+      return [tag, attributes, children];
+    }
+
     this.unmount = function() {
-      this.listeners.forEach(function(listener) {
-        self.socket.removeListener(listener[0], listener[1]);
+      this.eventListeners["message"].forEach(function(listener) {
+        self.socket.removeListener("message", listener);
+      });
+
+      this.eventHandlers = this.eventHandlers.filter(function(handler) {
+        removeNodeEventListener(handler);
+        return false;
       });
     }
 
@@ -383,20 +440,6 @@
       }
     }
 
-    this.on = function(event, fun) {
-      var self = this;
-      if(event == "join") {
-        this.websocket.addEventListener("open", fun.bind(this));
-      } else if(event == "message") {
-        var listener = this.socket.onMessageFor(this.id, function(data) {
-          if(data.type == "msg") {
-            fun.call(self, data.payload);
-          }
-        });
-
-        this.listeners.push(["message", listener]);
-      }
-    }
   };
 
   function Socket() {
@@ -483,6 +526,7 @@
       if(index >= 0) {
         this.eventListeners[type].splice(index, 1);
       }
+      exports.log("removing listener", type, index);
     }
 
     this.on = function(event, fun, opts) {
@@ -511,11 +555,14 @@
     };
 
     this.send = function(data) {
+      exports.log("send", data);
       this.websocket.send(JSON.stringify(data));
     }
 
     this.mount = function(elem, route, params) {
       var program = new Program(this, elem, route, params)
+
+      exports.log("mount", route, params);
 
       if(this.websocket.readyState == 1) {
         program.join();
@@ -541,7 +588,7 @@
       setTimeout(function() {
         self.connectionRetries++;
         self.connect(self.websocketOpts);
-      }, self.connectionRetries * 500);
+      }, self.connectionRetries * 200);
     });
 
     this.on("connect", function() {

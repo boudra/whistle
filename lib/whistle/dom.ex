@@ -401,6 +401,10 @@ defmodule Whistle.Dom do
     from_floki_attributes(rest)
   end
 
+  def from_floki_attributes([["on", handler] | rest]) do
+    [{:on, [{String.to_existing_atom(handler),nil}]} | from_floki_attributes(rest)]
+  end
+
   def from_floki_attributes([[key, value] | rest]) do
     [{String.to_existing_atom(key), value} | from_floki_attributes(rest)]
   end
