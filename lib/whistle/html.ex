@@ -30,6 +30,15 @@ defmodule Whistle.Html do
     node("h1", attributes, children)
   end
 
+  def h2(attributes, children) do
+    node("h2", attributes, children)
+  end
+
+  def h3(attributes, children) do
+    node("h3", attributes, children)
+  end
+
+
   def button(attributes, children) do
     node("button", attributes, children)
   end
@@ -86,12 +95,20 @@ defmodule Whistle.Html do
     node("br", [], [])
   end
 
+  def i(attrs) do
+    node("i", attrs, [])
+  end
+
   def text(content) do
     to_string(content)
   end
 
   def lazy(fun, args) do
     {:lazy, fun, args}
+  end
+
+  def link(attributes) do
+    node("link", attributes, [])
   end
 
   def program(name, params) do

@@ -105,45 +105,6 @@ children = [
 ]
 ```
 
-## Integrating Whistle with an existing Phoenix endpoint
-
-Whistle provides a HTTP server module that runs **Plug & Cowboy** for you and works out of the box, but it can also work alongside Phoenix.
-
-All we need to do is add the router handlers to the Cowboy dispatch options.
-
-Pass a list of all your routers as an argument to the `build_handlers/1` helper:
-
-```elixir
-Whistle.HttpServer.build_handlers([MyAppWeb.ProgramRouter])
-```
-
-Here is an example:
-
-```elixir
-config :myapp, MyAppWeb.Endpoint,
-  http: [dispatch: [
-          {:_, Whistle.HttpServer.build_handlers([MyAppWeb.ProgramRouter]) ++ [
-              {:_, Phoenix.Endpoint.Cowboy2Handler, {MyAppWeb.Endpoint, []}}
-            ]}]]
-```
-
-Check out the [Phoenix.CowBoy2.Adapter docs](https://hexdocs.pm/phoenix/Phoenix.Endpoint.Cowboy2Adapter.html) for more info.
-
-Once the handlers have been added, you can embed a program in your views like so:
-
-```elixir
-<%= raw(Whistle.Program.embed(conn, MyAppWeb.ProgramRouter, "counter", %{})) %>
-```
-
-Make sure you include the [Javscript](/docs/javascript.md) library, you can also embed the program using the Javascript API:
-
-```javascript
-import { Whistle } from 'js/whistle';
-const socket = Whistle.open("ws://localhost:4000/socket");
-const target = document.getElementById("target");
-const program = socket.mount(target, "counter", {});
-```
-
 ## Running a standalone Whistle server
 
 To start a Whistle server, you need to add the `Whistle.HttpServer` child specification to your application supervisor like this:
@@ -167,7 +128,7 @@ You can always define and use a config yourself if you wish:
 
 config :my_app, :whistle_http, [
   http: [port: 4000],
-  plug: MyAppWeb.Plug, # Specify your own Plug to be called
+  plug: MyAppWeb.Plug, # Specify your Plug to be called
   routers: [MyAppWeb.ProgramRouter]
 ]
 
@@ -236,3 +197,44 @@ $ iex -S mix
 ```
 
 Now navigate to http://localhost:4000/ to see your awesome counter!
+
+## Integrating Whistle with an existing Phoenix endpoint
+
+Because Whistle is based on Plug and Cowboy, it can also work alongside Phoenix.
+
+All we need to do is add the router handlers to the Cowboy dispatch options.
+
+Pass a list of all your routers as an argument to the `build_handlers/1` helper:
+
+```elixir
+Whistle.HttpServer.build_handlers([MyAppWeb.ProgramRouter])
+```
+
+Here is an example:
+
+```elixir
+config :myapp, MyAppWeb.Endpoint,
+  http: [dispatch: [
+          {:_, Whistle.HttpServer.build_handlers([MyAppWeb.ProgramRouter]) ++ [
+              {:_, Phoenix.Endpoint.Cowboy2Handler, {MyAppWeb.Endpoint, []}}
+            ]}]]
+```
+
+Check out the [Phoenix.CowBoy2.Adapter docs](https://hexdocs.pm/phoenix/Phoenix.Endpoint.Cowboy2Adapter.html) for more info.
+
+Once the handlers have been added, you can embed a program in your views like so:
+
+```elixir
+<%= raw(Whistle.Program.embed(conn, MyAppWeb.ProgramRouter, "counter", %{})) %>
+```
+
+Make sure you include the [Javscript](/docs/javascript.md) library, you can also embed the program using the Javascript API:
+
+```javascript
+import { Whistle } from 'js/whistle';
+
+const socket = Whistle.open("ws://localhost:4000/socket");
+const target = document.getElementById("target");
+const program = socket.mount(target, "counter", {});
+```
+

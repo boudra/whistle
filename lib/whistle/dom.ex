@@ -468,7 +468,7 @@ defmodule Whistle.Dom do
       |> Enum.map(&node_to_string/1)
       |> Enum.join("")
 
-    if tag in ["input", "hr", "br", "meta"] and children == "" do
+    if tag in ["link", "input", "hr", "br", "meta"] and children == "" do
       ~s(<#{tag} #{attributes_to_string(attributes)}/>)
     else
       ~s(<#{tag} #{attributes_to_string(attributes)}>#{children}</#{tag}>)

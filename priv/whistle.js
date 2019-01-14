@@ -2,7 +2,7 @@
   var sockets = {};
 
   exports.log = console.log;
-  exports.log = function() {};
+  // exports.log = function() {};
 
   exports.open = function(url) {
     if(sockets[url]) {
@@ -263,7 +263,7 @@
               break;
           }
         });
-      } else if(data.type == "msg" && data.payload[0] == "whi_navigate") {
+      } else if(data.type == "msg" && data.payload[0] == "whistle_push_state") {
         window.history.pushState({path: data.payload[1]}, "", data.payload[1]);
       }
     };
