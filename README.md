@@ -144,40 +144,25 @@ Now let's define the main Plug that is going to serve normal HTTP requests befor
 ```elixir
 # lib/my_app_web/plug.ex
 
+
 defmodule MyAppWeb.Plug do
   use Plug.Builder
 
-  # Mount will render an initial HTML and then get dynamically updated when changes happen
-  defp index_html(conn) do
-    """
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <title></title>
-    </head>
-    <body>
-      #{Whistle.Program.mount(conn, MyAppWeb.ProgramRouter, "counter", %{})}
-      <script src="/js/whistle.js"></script>
-    </body>
-    </html>
-    """
-  end
+  plug(Plug.Logger)
 
-  plug Plug.Logger
-
-  plug Plug.Static,
+  plug(Plug.Static,
     at: "/",
-    from: :whistle_chat,
+    from: :my_app,
     gzip: false,
     only: ~w(css js favicon.ico robots.txt)
+  )
 
-  plug :index
+  plug(:index)
 
   def index(conn, _opts) do
     conn
     |> put_resp_content_type("text/html")
-    |> send_resp(200, index_html(conn))
+    |> Whistle.Program.fullscreen(MyAppWeb.ProgramRouter, "counter")
   end
 end
 ```

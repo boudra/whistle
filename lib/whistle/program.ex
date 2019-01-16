@@ -67,10 +67,11 @@ defmodule Whistle.Program do
       end
       |> Whistle.Dom.node_to_string()
 
-    """
-    <!DOCTYPE html>
-    #{view}
-    """
+    resp = "<!DOCTYPE html>#{view}"
+
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, resp)
   end
 
   defp embed_programs(conn, router, {key, {:program, name, params}}) do
