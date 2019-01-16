@@ -1,5 +1,6 @@
 defmodule Whistle.Program do
   alias Whistle.Socket
+  require Whistle.Html
 
   @json_library Application.get_env(:whistle, :json_library, Jason)
 
@@ -8,6 +9,7 @@ defmodule Whistle.Program do
       @behaviour Whistle.Program
 
       alias Whistle.Html
+      require Whistle.Html
       import Whistle.Socket
     end
   end

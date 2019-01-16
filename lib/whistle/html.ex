@@ -1,4 +1,49 @@
 defmodule Whistle.Html do
+  @tags [
+    :div,
+    :img,
+    :a,
+    :form,
+    :table,
+    :tr,
+    :td,
+    :tbody,
+    :thead,
+    :select,
+    :option,
+    :section,
+    :header,
+    :footer,
+    :nav,
+    :ul,
+    :ol,
+    :li,
+    :input,
+    :br,
+    :p,
+    :b,
+    :strong,
+    :center,
+    :span,
+    :html,
+    :body,
+    :head,
+    :script,
+    :link,
+    :h1,
+    :h2,
+    :h3,
+    :h4,
+  ]
+
+  for tag <- @tags do
+    tag_name = Atom.to_string(tag)
+
+    def unquote(tag)(attributes \\ [], children \\ []) do
+      node(unquote(tag_name), attributes, children)
+    end
+  end
+
   def node(tag, attributes, text) when is_binary(text) do
     node(tag, attributes, [text])
   end
@@ -14,101 +59,12 @@ defmodule Whistle.Html do
     {tag, attributes, children}
   end
 
-  def div(attributes, children) do
-    node("div", attributes, children)
-  end
-
-  def p(attributes, children) do
-    node("p", attributes, children)
-  end
-
-  def a(attributes, children) do
-    node("a", attributes, children)
-  end
-
-  def h1(attributes, children) do
-    node("h1", attributes, children)
-  end
-
-  def h2(attributes, children) do
-    node("h2", attributes, children)
-  end
-
-  def h3(attributes, children) do
-    node("h3", attributes, children)
-  end
-
-
-  def button(attributes, children) do
-    node("button", attributes, children)
-  end
-
-  def input(attributes) do
-    node("input", attributes, [])
-  end
-
-  def ul(attributes, children) do
-    node("ul", attributes, children)
-  end
-
-  def li(attributes, children) do
-    node("li", attributes, children)
-  end
-
-  def strong(attributes, children) do
-    node("strong", attributes, children)
-  end
-
-  def form(attributes, children) do
-    node("form", attributes, children)
-  end
-
-  def html(attributes, children) do
-    node("html", attributes, children)
-  end
-
-  def head(attributes, children) do
-    node("head", attributes, children)
-  end
-
-  def body(attributes, children) do
-    node("body", attributes, children)
-  end
-
-  def meta(attributes) do
-    node("meta", attributes, [])
-  end
-
-  def title(children) do
-    node("title", [], children)
-  end
-
-  def script(attributes) do
-    node("script", attributes, [])
-  end
-
-  def script(attributes, children) do
-    node("script", attributes, children)
-  end
-
-  def br() do
-    node("br", [], [])
-  end
-
-  def i(attrs) do
-    node("i", attrs, [])
-  end
-
   def text(content) do
     to_string(content)
   end
 
   def lazy(fun, args) do
     {:lazy, fun, args}
-  end
-
-  def link(attributes) do
-    node("link", attributes, [])
   end
 
   def program(name, params) do
