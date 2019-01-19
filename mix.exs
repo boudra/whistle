@@ -55,7 +55,7 @@ defmodule Whistle.MixProject do
   defp deps do
     [
       {:plug, "~> 1.7"},
-      {:floki, "~> 0.20.0"},
+      {:nimble_parsec, "~> 0.5.0", override: true},
 
       # Optional dependencies
       {:jason, "~> 1.0", optional: true},
