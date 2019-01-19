@@ -70,7 +70,7 @@ defmodule Whistle.SocketHandler do
             router: router,
             name: program_name,
             handlers: %{},
-            vdom: {0, Whistle.Dom.from_floki_element(dom)},
+            vdom: {0, Whistle.Html.Dom.decode_element(dom)},
             session: session
           }
 

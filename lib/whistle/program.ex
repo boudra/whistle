@@ -11,6 +11,7 @@ defmodule Whistle.Program do
       alias Whistle.Html
       require Whistle.Html
       import Whistle.Socket
+      import Whistle.Html.Parser, only: [sigil_H: 2]
     end
   end
 
@@ -20,7 +21,7 @@ defmodule Whistle.Program do
   @callback update(Whistle.message(), Whistle.state(), Socket.t()) ::
               {:ok, Whistle.state(), Whistle.Session.t()}
   @callback handle_info(any(), Whistle.state()) :: {:ok, Whistle.state()}
-  @callback view(Whistle.state(), Whistle.Session.t()) :: Whistle.Dom.t()
+  @callback view(Whistle.state(), Whistle.Session.t()) :: Whistle.Html.Dom.t()
 
   def render(conn, router, program_name, params) do
     channel_path = String.split(program_name, ":")
@@ -65,7 +66,7 @@ defmodule Whistle.Program do
 
           {0, {"html", new_attributes, new_children}}
       end
-      |> Whistle.Dom.node_to_string()
+      |> Whistle.Html.Dom.node_to_string()
 
     resp = "<!DOCTYPE html>#{view}"
 
@@ -106,6 +107,6 @@ defmodule Whistle.Program do
 
   def embed(conn, router, program_name, params) do
     embed_programs(conn, router, {0, Whistle.Html.program(program_name, params)})
-    |> Whistle.Dom.node_to_string()
+    |> Whistle.Html.Dom.node_to_string()
   end
 end

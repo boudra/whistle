@@ -1,4 +1,4 @@
-defmodule Whistle.Dom do
+defmodule Whistle.Html.Dom do
   @type t() :: tuple()
 
   defmodule Diff do
@@ -381,51 +381,51 @@ defmodule Whistle.Dom do
     [tag, attributes, children]
   end
 
-  def from_floki_attributes([]) do
+  def decode_attributes([]) do
     []
   end
 
-  def from_floki_attributes([[key = "data-whistle-navigation", value] | rest]) do
-    [{String.to_existing_atom(key), value} | from_floki_attributes(rest)]
+  def decode_attributes([[key = "data-whistle-navigation", value] | rest]) do
+    [{String.to_existing_atom(key), value} | decode_attributes(rest)]
   end
 
-  def from_floki_attributes([["data-" <> _, value] | rest]) do
-    from_floki_attributes(rest)
+  def decode_attributes([["data-" <> _, value] | rest]) do
+    decode_attributes(rest)
   end
 
-  def from_floki_attributes([["on", handler] | rest]) do
-    [{:on, [{String.to_existing_atom(handler),nil}]} | from_floki_attributes(rest)]
+  def decode_attributes([["on", handler] | rest]) do
+    [{:on, [{String.to_existing_atom(handler),nil}]} | decode_attributes(rest)]
   end
 
-  def from_floki_attributes([[key, value] | rest]) do
-    [{String.to_existing_atom(key), value} | from_floki_attributes(rest)]
+  def decode_attributes([[key, value] | rest]) do
+    [{String.to_existing_atom(key), value} | decode_attributes(rest)]
   end
 
-  def from_floki_element(nil) do
+  def decode_element(nil) do
     nil
   end
 
-  def from_floki_element(element) when is_binary(element) do
+  def decode_element(element) when is_binary(element) do
     Whistle.Html.text(element)
   end
 
-  def from_floki_element(["program", program, params]) do
+  def decode_element(["program", program, params]) do
     {:program, program, params}
   end
 
-  def from_floki_element(["script", attributes, [""]]) do
-    from_floki_element(["script", attributes, []])
+  def decode_element(["script", attributes, [""]]) do
+    decode_element(["script", attributes, []])
   end
 
-  def from_floki_element([tag, attributes, children]) do
+  def decode_element([tag, attributes, children]) do
     children =
       children
       |> Enum.with_index()
       |> Enum.map(fn {node, index} ->
-        {index, from_floki_element(node)}
+        {index, decode_element(node)}
       end)
 
-    {tag, from_floki_attributes(attributes), children}
+    {tag, decode_attributes(attributes), children}
   end
 
   defp attributes_to_string(attributes) do

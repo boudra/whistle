@@ -32,7 +32,7 @@ defmodule Whistle.ProgramConnection do
   end
 
   def put_new_vdom(program = %{handlers: handlers, lazy_trees: trees, vdom: vdom}, new_vdom) do
-    diff = Whistle.Dom.diff(trees, vdom, new_vdom)
+    diff = Whistle.Whistle.Dom.diff(trees, vdom, new_vdom)
 
     handlers =
       Enum.reduce(diff.handlers, handlers, fn {:put, name, handler}, handlers ->
