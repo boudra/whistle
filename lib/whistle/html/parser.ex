@@ -130,11 +130,11 @@ defmodule Whistle.Html.Parser do
   end
 
   defmacro sigil_H({:<<>>, _, iolist}, _) do
-    case HtmlParser.parse(to_string(iolist)) do
+    case parse(to_string(iolist)) do
       {:ok, nodes, _, _, _, _} ->
         Macro.escape(List.first(nodes), unquote: true)
 
-      a = {:error, reason, rest, _, {line, col}, _} ->
+      {:error, reason, rest, _, {line, col}, _} ->
         raise %ParseError{string: String.slice(rest, 0..40), line: line, col: col, message: reason}
     end
   end
