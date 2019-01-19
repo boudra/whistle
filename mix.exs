@@ -69,6 +69,7 @@ defmodule Whistle.MixProject do
       {:jason, "~> 1.0", optional: true},
       {:plug_cowboy, "~> 2.0", optional: true},
       {:ex_doc, ">= 0.0.0", only: :dev},
+      {:inch_ex, "~> 0.5", only: :docs},
       {:excoveralls, "~> 0.8", only: :test}
     ]
   end
