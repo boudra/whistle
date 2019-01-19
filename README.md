@@ -25,7 +25,7 @@ What has been done, and what is left to do:
 - [ ] Rewrite front-end library in ES6+/Typescript for easier development
 - [ ] Write front-end library tests
 - [ ] DOM list patching (reordering, inserting)
-- [ ] HTML string or EEx template file to VDOM tree in the view
+- [x] HTML string or EEx template file to VDOM tree in the view
 
 ## Installation
 
