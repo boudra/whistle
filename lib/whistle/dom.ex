@@ -381,14 +381,6 @@ defmodule Whistle.Dom do
     [tag, attributes, children]
   end
 
-  def from_html_string(html) do
-    case Floki.parse(html) do
-      [root | _] -> {0, from_floki_element(root)}
-      [] -> {0, nil}
-      root -> {0, from_floki_element(root)}
-    end
-  end
-
   def from_floki_attributes([]) do
     []
   end
