@@ -2,7 +2,7 @@ defmodule DomTest do
   use ExUnit.Case
   doctest Whistle
 
-  alias Whistle.{Html, Dom}
+  alias Whistle.{Html, Html.Dom}
 
   # patch operation codes
   # TODO: macro to import these from the Dom module
