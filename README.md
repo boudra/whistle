@@ -93,6 +93,12 @@ defmodule MyAppWeb.ExampleProgram do
       <button on-click=#{{:change, -1}}>-</button>
     </div>
     """
+    # This will get compiled to:
+    # Html.div([], [
+    #  Html.button([on: [click: {:change, 1}]], "+"),
+    #  Html.span([], "The current number is: #{state}"),
+    #  Html.button([on: [click: {:change, -1}]], "-")
+    # ])
   end
 end
 ```
