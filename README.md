@@ -113,16 +113,16 @@ children = [
 ]
 ```
 
-## Running a standalone Whistle server
+## Running a standalone Whistle project
 
-To start a Whistle server, you need to add the `Whistle.HttpServer` child specification to your application supervisor like this:
+To start a project, you need to add the `Whistle.HttpServer` child specification to your application supervisor like this:
 
 ```elixir
 # lib/my_app/application.ex
 
 children = [
   {Whistle.HttpServer, [
-    http: [port: 4000],
+    http: [port: 4000], # settings passed to Cowboy
     plug: MyAppWeb.Plug, # Specify your own Plug to be called
     routers: [MyAppWeb.ProgramRouter]
   ]}
