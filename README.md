@@ -139,7 +139,7 @@ children = [
 ]
 ```
 
-Now let's define the main Plug that is going to serve normal HTTP requests before we make any WebSocket connections, here you can run any plugs you might need. In this case, we are just serving the Javascript file with `Plug.Static` and rendering a very basic `index.html` file that mounts our component.
+Now let's define the main Plug that is going to serve normal HTTP requests before we make any WebSocket connections, here you can run any plugs you might need. In this case, we are just serving the Javascript file with `Plug.Static` and rendering our counter program.
 
 ```elixir
 # lib/my_app_web/plug.ex
@@ -161,7 +161,6 @@ defmodule MyAppWeb.Plug do
 
   def index(conn, _opts) do
     conn
-    |> put_resp_content_type("text/html")
     |> Whistle.Program.fullscreen(MyAppWeb.ProgramRouter, "counter")
   end
 end

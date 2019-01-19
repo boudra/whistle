@@ -5,13 +5,13 @@ defmodule Whistle.Navigation do
     Html.a(attributes ++ [href: path, on: [
       click: [
         prevent_default: true,
-        msg: ["whistle_navigate", path]
+        msg: {:_whistle_navigate, path_to_segments(path)}
       ]
     ]], children)
   end
 
   def html(attributes, children) do
-    Html.html(attributes ++ [on: [history: &["whistle_update_path", &1]]], children)
+    Html.html(attributes ++ [on: [history: &{:_whistle_update_path, &1}]], children)
   end
 
   def path_to_segments(path) do
@@ -22,20 +22,22 @@ defmodule Whistle.Navigation do
     quote do
       alias Whistle.Navigation
 
-      def update(["whistle_navigate", path], state, session) do
+      def update({:_whistle_navigate, path}, state, session) do
         path_info =
           Navigation.path_to_segments(path)
 
-        {:reply, state, %{session | path: path_info}, ["whistle_push_state", path]}
+        case update({:whistle_navigate, path}, state, session) do
+          {:ok, state, session} ->
+            {:reply, state, %{session | path: path_info}, ["whistle_push_state", path]}
+        end
       end
 
-      def update(["whistle_update_path", path], state, session) do
+      def update({:_whistle_update_path, path}, state, session) do
         path_info =
           Navigation.path_to_segments(path)
 
         {:ok, state, %{session | path: path}}
       end
-
     end
   end
 end
