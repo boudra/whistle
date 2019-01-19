@@ -1,5 +1,6 @@
 defmodule Whistle.Navigation do
   alias Whistle.Html
+  require Whistle.Html
 
   def link(path, attributes, children) do
     Html.a(attributes ++ [href: path, on: [

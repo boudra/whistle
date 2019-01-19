@@ -3,6 +3,7 @@ defmodule DomTest do
   doctest Whistle
 
   alias Whistle.{Html, Html.Dom}
+  require Whistle.Html
 
   # patch operation codes
   # TODO: macro to import these from the Dom module

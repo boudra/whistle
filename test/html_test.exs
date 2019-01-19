@@ -3,6 +3,7 @@ defmodule HtmlTest do
   doctest Whistle
   import Whistle.Html.Parser
 
+  require Whistle.Html
   alias Whistle.Html
 
   test "html parser" do

@@ -22,15 +22,15 @@ defmodule Whistle.Html.Parser do
 
   defp string_to_quoted(expr) do
     {:ok, quoted} = Code.string_to_quoted(expr)
-    {:unquote, [], [quoted]}
-  end
-
-  defp html_text({:unquote, [], expr}) do
-    {:unquote, [], [{:to_string, [], expr}]}
+    quoted
   end
 
   defp html_text(string) do
-    string
+    if Macro.quoted_literal?(string) do
+      to_string(string)
+    else
+      quote do: to_string(unquote(string))
+    end
   end
 
   expr =
@@ -120,9 +120,9 @@ defmodule Whistle.Html.Parser do
           |> Keyword.get_values(:child)
           |> Enum.reverse()
 
-        acc = Html.node(tag, attributes, List.flatten(children))
+        acc = Html.build_node(tag, attributes, List.flatten(children))
 
-        {[acc], context}
+        {[Macro.escape(acc, unquote: true)], context}
 
       true ->
         {:error, "Closing tag #{closing_tag} did not match opening tag #{opening_tag}"}
@@ -132,7 +132,7 @@ defmodule Whistle.Html.Parser do
   defmacro sigil_H({:<<>>, _, iolist}, _) do
     case parse(to_string(iolist)) do
       {:ok, nodes, _, _, _, _} ->
-        Macro.escape(List.first(nodes), unquote: true)
+        List.first(nodes)
 
       {:error, reason, rest, _, {line, col}, _} ->
         raise %ParseError{string: String.slice(rest, 0..40), line: line, col: col, message: reason}
