@@ -6,7 +6,6 @@ defmodule DomTest do
 
   # patch operation codes
   # TODO: macro to import these from the Dom module
-  @replace_text 1
   @add_node 2
   @replace_node 3
   @remove_node 4
