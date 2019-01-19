@@ -70,8 +70,8 @@ defmodule Whistle.Program do
     resp = "<!DOCTYPE html>#{view}"
 
     conn
-    |> put_resp_content_type("text/html")
-    |> send_resp(200, resp)
+    |> Plug.Conn.put_resp_content_type("text/html")
+    |> Plug.Conn.send_resp(200, resp)
   end
 
   defp embed_programs(conn, router, {key, {:program, name, params}}) do
