@@ -86,11 +86,13 @@ defmodule MyAppWeb.ExampleProgram do
   end
 
   def view(state, _session) do
-    Html.div([], [
-      Html.button([on: [click: {:change, 1}]], "+"),
-      Html.text("The current number is: #{state}"),
-      Html.button([on: [click: {:change, -1}]], "-")
-    ])
+    ~H"""
+    <div>
+      <button on-click=#{{:change, 1}}>+</button>
+      <span>The current number is: #{state}</span>
+      <button on-click=#{{:change, -1}}>-</button>
+    </div>
+    """
   end
 end
 ```
