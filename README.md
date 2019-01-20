@@ -57,13 +57,7 @@ defmodule MyAppWeb.ProgramRouter do
 end
 ```
 
-This is how the browser knows which Program to mount:
-
-```
-+---------+          +-------------+                  +-----------+
-| Client  |  /ws ->  |   Router    |  chat:*lobby ->  |  Program  |
-+---------+          +-------------+                  +-----------+
-```
+Use `Whistle.Router.match/3` to define program routes, the router will spawn a new program instance for every unique route.
 
 The program is a module where we specify how to manage and render its state, here is a very simple example:
 
@@ -75,10 +69,6 @@ defmodule MyAppWeb.ExampleProgram do
 
   def init(_params) do
     {:ok, 0}
-  end
-
-  def authorize(_state, socket, _params) do
-    {:ok, socket, nil}
   end
 
   def update({:change, n}, state, session) do
@@ -97,7 +87,9 @@ defmodule MyAppWeb.ExampleProgram do
 end
 ```
 
-Now all you need to do is add the router in your supervision tree, a router will spawn a dynamic Supervisor and Registry to keep track of all the program instances, you can run as many different routers as you want:
+Check out the docs for `Whistle.Program` to see all the callbacks available and the different ways to render the view.
+
+All you need to do now is add the router in your supervision tree, a router will spawn a dynamic Supervisor and Registry to keep track of all the program instances, you can run as many different routers as you want:
 
 ```elixir
 # lib/my_app/application.ex
@@ -107,120 +99,4 @@ children = [
 ]
 ```
 
-## Running a standalone Whistle project
-
-To start a project, you need to add the `Whistle.HttpServer` child specification to your application supervisor like this:
-
-```elixir
-# lib/my_app/application.ex
-
-children = [
-  {Whistle.HttpServer, [
-    http: [port: 4000], # settings passed to Cowboy
-    plug: MyAppWeb.Plug, # Specify your own Plug to be called
-    routers: [MyAppWeb.ProgramRouter]
-  ]}
-]
-```
-
-You can always define and use a config yourself if you wish:
-
-```elixir
-# config/dev.exs
-
-config :my_app, :whistle_http, [
-  http: [port: 4000],
-  plug: MyAppWeb.Plug, # Specify your Plug to be called
-  routers: [MyAppWeb.ProgramRouter]
-]
-
-# lib/my_app/application.ex
-
-children = [
-  {Whistle.HttpServer, Application.get_env(:my_app, :whistle_http)}
-]
-```
-
-Now let's define the main Plug that is going to serve normal HTTP requests before we make any WebSocket connections, here you can run any plugs you might need. In this case, we are just serving the Javascript file with `Plug.Static` and rendering our counter program.
-
-```elixir
-# lib/my_app_web/plug.ex
-
-
-defmodule MyAppWeb.Plug do
-  use Plug.Builder
-
-  plug(Plug.Logger)
-
-  plug(Plug.Static,
-    at: "/",
-    from: :my_app,
-    gzip: false,
-    only: ~w(css js favicon.ico robots.txt)
-  )
-
-  plug(:index)
-
-  def index(conn, _opts) do
-    conn
-    |> Whistle.Program.fullscreen(MyAppWeb.ProgramRouter, "counter")
-  end
-end
-```
-
-Don't forget to copy the Javascript library:
-
-```
-$ mix deps.get
-$ mkdir -p priv/static/js
-$ cp deps/whistle/priv/whistle.js priv/static/js/
-```
-
-Run your application:
-
-```
-$ iex -S mix
-```
-
-Now navigate to http://localhost:4000/ to see your awesome counter!
-
-## Integrating Whistle with an existing Phoenix endpoint
-
-Because Whistle is based on Plug and Cowboy, it can also work alongside Phoenix.
-
-All we need to do is add the router handlers to the Cowboy dispatch options.
-
-Pass a list of all your routers as an argument to the `build_handlers/1` helper:
-
-```elixir
-Whistle.HttpServer.build_handlers([MyAppWeb.ProgramRouter])
-```
-
-Here is an example:
-
-```elixir
-config :myapp, MyAppWeb.Endpoint,
-  http: [dispatch: [
-          {:_, Whistle.HttpServer.build_handlers([MyAppWeb.ProgramRouter]) ++ [
-              {:_, Phoenix.Endpoint.Cowboy2Handler, {MyAppWeb.Endpoint, []}}
-            ]}]]
-```
-
-Check out the [Phoenix.CowBoy2.Adapter docs](https://hexdocs.pm/phoenix/Phoenix.Endpoint.Cowboy2Adapter.html) for more info.
-
-Once the handlers have been added, you can embed a program in your views like so:
-
-```elixir
-<%= raw(Whistle.Program.embed(conn, MyAppWeb.ProgramRouter, "counter", %{})) %>
-```
-
-Make sure you include the [Javscript](/docs/javascript.md) library, you can also embed the program using the Javascript API:
-
-```javascript
-import { Whistle } from 'js/whistle';
-
-const socket = Whistle.open("ws://localhost:4000/socket");
-const target = document.getElementById("target");
-const program = socket.mount(target, "counter", {});
-```
-
+Now that you have a router and a program, it's time to run everything! You can do so integrating Whistle [with your existing Phoenix project](/docs/phoenix.md) or [running Whislte on it's own](/docs/setup.md).

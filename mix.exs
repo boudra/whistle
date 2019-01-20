@@ -45,8 +45,9 @@ defmodule Whistle.MixProject do
   defp extras() do
     [
       "README.md",
-      "docs/distributed.md",
-      "docs/javascript.md"
+      "docs/phoenix.md",
+      "docs/setup.md",
+      "docs/distributed.md"
     ]
   end
 
