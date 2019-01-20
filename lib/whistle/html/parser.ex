@@ -19,10 +19,14 @@ defmodule Whistle.Html.Parser do
     end
   end
 
-
   defp string_to_quoted(expr) do
-    {:ok, quoted} = Code.string_to_quoted(expr)
-    quoted
+    case Code.string_to_quoted(expr) do
+      {:ok, quoted} ->
+        quoted
+
+      {:error, {_, reason, _}} ->
+        raise %ParseError{string: expr, message: reason}
+    end
   end
 
   defp html_text(string) do
@@ -34,9 +38,10 @@ defmodule Whistle.Html.Parser do
   end
 
   expr =
-    ignore(string("\#\{"))
-    |> utf8_string([not: ?}], min: 1)
-    |> ignore(string("}"))
+    ignore(string("<%="))
+    |> repeat(lookahead_not(string("%>")) |> utf8_char([]))
+    |> ignore(string("%>"))
+    |> reduce({List, :to_string, []})
     |> map(:string_to_quoted)
 
   tag_name = ascii_string([?a..?z, ?A..?Z], min: 1)
@@ -50,14 +55,24 @@ defmodule Whistle.Html.Parser do
     |> unwrap_and_tag(:closing_tag)
 
   attribute_value =
-    ignore(string("\""))
-    |> utf8_string([not: ?"], min: 1)
-    |> ignore(string("\""))
+    ignore(ascii_char([?"]))
+    |> repeat(
+      lookahead_not(ignore(ascii_char([?"])))
+      |> choice([
+        ~S(\") |> string() |> replace(?"),
+        utf8_char([])
+      ])
+    )
+    |> ignore(ascii_char([?"]))
+    |> reduce({List, :to_string, []})
 
   attribute =
     utf8_string([?a..?z, ?-], min: 1)
-    |> ignore(string("="))
-    |> choice([expr, attribute_value])
+    |> concat(whitespace)
+    |> optional(choice([
+      ignore(string("=")) |> concat(expr),
+      ignore(string("=")) |> concat(attribute_value)
+    ]))
     |> wrap()
 
   opening_tag =
@@ -108,6 +123,12 @@ defmodule Whistle.Html.Parser do
             ["on-" <> event, value] ->
               {:on, [{String.to_atom(event), value}]}
 
+            [key] ->
+              underscore_key =
+                String.replace(key, "-", "_")
+
+              {String.to_atom(underscore_key), true}
+
             [key, value] ->
               underscore_key =
                 String.replace(key, "-", "_")
@@ -139,4 +160,3 @@ defmodule Whistle.Html.Parser do
     end
   end
 end
-

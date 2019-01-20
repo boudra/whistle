@@ -38,7 +38,7 @@ defmodule Whistle.Program do
              socket,
              Map.merge(program_params, params)
            ) do
-      GenServer.call(pid, {:view, session})
+      Whistle.ProgramInstance.view(router, program_name, session)
     end
   end
 
