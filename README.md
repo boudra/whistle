@@ -21,11 +21,13 @@ What has been done, and what is left to do:
 - [x] Initial render via HTTP, then pickup updates via WebSockets
 - [x] Full screen program mode with browser history to build Single Page Applications with Server Side Rendering :rocket:
 - [x] Embed programs inside of other programs (like React components)
+- [x] HTML string or EEx template file to VDOM tree in the view
+- [ ] Advanced `Navigation` module to do full featured program routing
+- [ ] Authentication helpers?
 - [ ] Built-in Session persistence helpers
 - [ ] Rewrite front-end library in ES6+/Typescript for easier development
 - [ ] Write front-end library tests
 - [ ] DOM list patching (reordering, inserting)
-- [x] HTML string or EEx template file to VDOM tree in the view
 
 ## Installation
 
@@ -85,6 +87,53 @@ defmodule MyAppWeb.ExampleProgram do
     """
   end
 end
+```
+
+Programs can also be nested:
+
+```elixir
+defmodule MyAppWeb.ProgramRouter do
+  use Whistle.Router, "/ws"
+
+  match("main", MyAppWeb.MainProgram, %{})
+  match("counter", MyAppWeb.ExampleProgram, %{})
+end
+
+defmodule MyAppWeb.MainProgram do
+  use Whistle.Program
+
+  def init(_params) do
+    {:ok, %{}}
+  end
+
+  def authorize(_state, socket, _params) do
+    {:ok, socket, %{path: "/"}}
+  end
+
+  def update({:navigate, path}, state, session) do
+    {:ok, state, %{path: path}}
+  end
+
+  def view(state, %{path: "/"}) do
+    ~H"""
+    <h1>Homepage</h1>
+    <a on-click=<%= {:navigate, "/counter"} %>>
+      Go to the counter
+    </a>
+    """
+  end
+
+  def view(state, %{path: "/counter"}) do
+    ~H"""
+    <h1>Counter</h1>
+    <a on-click=<%= {:navigate, "/"} %>>
+      Back to the homepage
+    </a>
+    <program name="counter" params=<%= %{} %> />
+    """
+  end
+end
+
 ```
 
 Check out the docs for `Whistle.Program` to see all the callbacks available and the different ways to render the view.
