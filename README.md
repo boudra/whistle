@@ -34,8 +34,8 @@ What has been done, and what is left to do:
 ```elixir
 def deps do
   [
-    {:whistle, "~> 0.1.0"},
-    # {:whistle, git: "https://github.com/boudra/whistle", ref: "master"},
+    {:whistle, git: "https://github.com/boudra/whistle", ref: "master"},
+    # {:whistle, "~> 0.1.0"},
 
     # optional
     {:jason, "~> 1.0"}, # for encoding and decoding JSON
