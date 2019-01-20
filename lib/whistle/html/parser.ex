@@ -89,7 +89,7 @@ defmodule Whistle.Html.Parser do
     |> ignore()
 
   children =
-    parsec(:do_parse)
+    parsec(:parse_children)
     |> tag(:child)
 
   tag =
@@ -104,9 +104,8 @@ defmodule Whistle.Html.Parser do
     ])
     |> post_traverse(:validate_node)
 
-  defparsecp(:do_parse, whitespace |> repeat(choice([tag, text, comment])))
-
-  defparsec(:parse, parsec(:do_parse) |> eos)
+  defparsecp(:parse_children, whitespace |> repeat(choice([tag, text, comment])))
+  defparsecp(:parse_root, parsec(:parse_children) |> eos)
 
   defp validate_node(_rest, args, context, _line, _offset) do
     opening_tag = Keyword.get(args, :opening_tag)
@@ -150,13 +149,21 @@ defmodule Whistle.Html.Parser do
     end
   end
 
-  defmacro sigil_H({:<<>>, _, iolist}, _) do
-    case parse(to_string(iolist)) do
+  defp do_parse(string) do
+    case parse_root(string) do
       {:ok, nodes, _, _, _, _} ->
         List.first(nodes)
 
       {:error, reason, rest, _, {line, col}, _} ->
         raise %ParseError{string: String.slice(rest, 0..40), line: line, col: col, message: reason}
     end
+  end
+
+  defmacro parse(string) do
+    do_parse(string)
+  end
+
+  defmacro sigil_H({:<<>>, _, [string]}, _) do
+    do_parse(string)
   end
 end

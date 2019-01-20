@@ -2,11 +2,19 @@ defmodule Whistle.Router do
   @registry Application.get_env(:whistle, :program_registry, Elixir.Registry)
   @supervisor Application.get_env(:whistle, :program_supervisor, Elixir.DynamicSupervisor)
 
-  def child_spec({router, _args}) do
-    children = [
+  defp build_children({router, _args}) do
+    [
       {@registry, [keys: :unique, name: Module.concat(router, Registry)]},
       {@supervisor, [name: Module.concat(router, Supervisor), strategy: :one_for_one]}
     ]
+  end
+
+  def start_link(args = {router, _args}) do
+    Supervisor.start_link(build_children(args), [name: router, strategy: :one_for_one])
+  end
+
+  def child_spec(args = {router, _args}) do
+    children = build_children(args)
 
     default = %{
       id: router,

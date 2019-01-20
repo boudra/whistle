@@ -19,6 +19,7 @@ defmodule Whistle.Html do
     :ol,
     :li,
     :input,
+    :button,
     :br,
     :p,
     :b,

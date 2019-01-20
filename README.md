@@ -88,9 +88,9 @@ defmodule MyAppWeb.ExampleProgram do
   def view(state, _session) do
     ~H"""
     <div>
-      <button on-click=#{{:change, 1}}>+</button>
-      <span>The current number is: #{state}</span>
-      <button on-click=#{{:change, -1}}>-</button>
+      <button on-click=<%= {:change, 1} %>>+</button>
+      <span>The current number is: <%= state %></span>
+      <button on-click=<%= {:change, -1} %>>-</button>
     </div>
     """
     # This will get compiled to:

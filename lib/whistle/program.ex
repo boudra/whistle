@@ -16,12 +16,14 @@ defmodule Whistle.Program do
   end
 
   @callback init(map()) :: {:ok, Whistle.state()}
+  @callback terminate(Whistle.state()) :: any()
   @callback authorize(Whistle.state(), Socket.t(), map()) ::
               {:ok, Socket.t(), Whistle.Session.t()} | {:error, any()}
   @callback update(Whistle.message(), Whistle.state(), Socket.t()) ::
               {:ok, Whistle.state(), Whistle.Session.t()}
   @callback handle_info(any(), Whistle.state()) :: {:ok, Whistle.state()}
   @callback view(Whistle.state(), Whistle.Session.t()) :: Whistle.Html.Dom.t()
+  @optional_callbacks [handle_info: 2, authorize: 3, terminate: 1]
 
   def render(conn, router, program_name, params) do
     channel_path = String.split(program_name, ":")

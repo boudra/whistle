@@ -37,7 +37,11 @@ defmodule Whistle.ProgramInstance do
     end
   end
 
-  def terminate(reason, %{name: name, router: router}) do
+  def terminate(reason, %{program: program, state: state, name: name, router: router}) do
+    if function_exported?(program, :terminate, 1) do
+      program.terminate(state)
+    end
+
     ProgramRegistry.broadcast(router, name, {:program_terminating, name, reason})
   end
 
@@ -74,12 +78,16 @@ defmodule Whistle.ProgramInstance do
         _from,
         instance = %{name: name, program: program, state: state}
       ) do
-    case program.authorize(state, socket, params) do
-      res = {:ok, _new_socket, _session} ->
-        {:reply, res, instance}
+    if function_exported?(program, :authorize, 3) do
+      case program.authorize(state, socket, params) do
+        res = {:ok, _new_socket, _session} ->
+          {:reply, res, instance}
 
-      other ->
-        {:reply, other, instance}
+        other ->
+          {:reply, other, instance}
+      end
+    else
+      {:reply, {:ok, socket, params}, instance}
     end
   end
 
@@ -87,16 +95,20 @@ defmodule Whistle.ProgramInstance do
         message,
         instance = %{router: router, name: name, program: program, state: state}
       ) do
-    case program.handle_info(message, state) do
-      {:ok, ^state} ->
-        {:noreply, instance}
+    if function_exported?(program, :handle_info, 2) do
+      case program.handle_info(message, state) do
+        {:ok, ^state} ->
+          {:noreply, instance}
 
-      {:ok, new_state} ->
-        ProgramRegistry.broadcast(router, name, {:updated, name})
-        {:noreply, %{instance | state: new_state}}
+        {:ok, new_state} ->
+          ProgramRegistry.broadcast(router, name, {:updated, name})
+          {:noreply, %{instance | state: new_state}}
 
-      {:error, _} ->
-        {:noreply, instance}
+        {:error, _} ->
+          {:noreply, instance}
+      end
+    else
+      {:noreply, instance}
     end
   end
 

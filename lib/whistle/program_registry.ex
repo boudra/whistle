@@ -2,7 +2,7 @@ defmodule Whistle.ProgramRegistry do
   @registry Whistle.Config.registry()
   @supervisor Whistle.Config.supervisor()
 
-  def start_program(router, name, program, params) do
+  defp start_program(router, name, program, params) do
     spec = {
       Whistle.ProgramInstance,
       {router, name, program, params}
