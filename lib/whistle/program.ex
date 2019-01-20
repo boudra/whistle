@@ -157,7 +157,7 @@ defmodule Whistle.Program do
   @callback view(Whistle.state(), Whistle.Session.t()) :: Whistle.Html.Dom.t()
   @optional_callbacks [handle_info: 2, authorize: 3, terminate: 1]
 
-  def render(conn, router, program_name, params) do
+  defp render(conn, router, program_name, params) do
     channel_path = String.split(program_name, ":")
 
     socket = Whistle.Socket.new(conn)
@@ -176,6 +176,29 @@ defmodule Whistle.Program do
     end
   end
 
+  @doc """
+  A fullscreen `Whistle.Program` renders the whole HTML document, this is useful if you want to also handle navigation in your program.
+
+  Remember to include the Javascript library via a `<script>` tag or module import.
+
+  Example of a view:
+
+  ```
+  def view(state, session) do
+    ~H"\""
+    <html>
+      <head>
+        <title>My Whistle App</title>
+        <script src="/js/whistle.js"></script>
+      </head>
+      <body>
+        <h1>It works!<h1>
+      </body>
+    </html>
+    "\""
+  end
+  ```
+  """
   def fullscreen(conn, router, program_name, params) do
     encoded_params =
       params
@@ -209,6 +232,28 @@ defmodule Whistle.Program do
     |> Plug.Conn.send_resp(200, resp)
   end
 
+  @doc """
+  Use `embed/4` to embed a Program in a view.
+
+  In a `Phoenix.View`:
+
+  <%= embed(conn, MyProgramRouter, "counter") |> raw %>
+
+  Or in a `Plug` or a `Phoenix.Controller`:
+
+  def index(conn, _opts) do
+    resp = embed(conn, MyProgramRouter, "counter")
+
+    conn
+    |> Plug.Conn.put_resp_content_type("text/html")
+    |> Plug.Conn.send_resp(200, resp)
+  end
+  """
+  def embed(conn, router, program_name, params // %{}) do
+    embed_programs(conn, router, {0, Whistle.Html.program(program_name, params)})
+    |> Whistle.Html.Dom.node_to_string()
+  end
+
   defp embed_programs(conn, router, {key, {:program, name, params}}) do
     encoded_params =
       params
@@ -237,10 +282,5 @@ defmodule Whistle.Program do
       end)
 
     {tag, attributes, new_children}
-  end
-
-  def embed(conn, router, program_name, params) do
-    embed_programs(conn, router, {0, Whistle.Html.program(program_name, params)})
-    |> Whistle.Html.Dom.node_to_string()
   end
 end
