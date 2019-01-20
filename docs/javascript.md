@@ -4,7 +4,7 @@ Whistle uses Javascript in the client to apply Virtual DOM patches, attach event
 
 While we try to do this without making you write any actual Javascript through various helpers. But we also provide a Javscript API for when you need to do advanced client-side logic like uploading files, fancy transitions etc.
 
-As always, you can include the file directly in your HTML
+As always, you can copy `priv/whistle.js` and include the file directly in your HTML:
 
 ```html
 <script src="/js/whistle.js"></script>
@@ -17,7 +17,7 @@ As always, you can include the file directly in your HTML
 or import it as a Javscript module, with a build tool like Webpack:
  
 ```js
-import { Whistle } from 'js/whistle';
+import { Whistle } from 'whistle';
 ```
 
 # Opening a connection to a router
