@@ -177,9 +177,17 @@ defmodule Whistle.Program do
   end
 
   @doc """
-  A fullscreen `Whistle.Program` renders the whole HTML document, this is useful if you want to also handle navigation in your program.
+  A fullscreen `Whistle.Program` renders the whole HTML document, this is useful if you want to also handle navigation in your program. When the Javscript library executes, it will automatically connect to the Program and become interactive.
 
   Remember to include the Javascript library via a `<script>` tag or module import.
+
+  Call in a `Plug` or a `Phoenix.Controller` action:
+
+  ```
+  def index(conn, _opts) do
+    fullscreen(conn, MyProgramRouter, "counter")
+  end
+  ```
 
   Example of a view:
 
@@ -199,7 +207,7 @@ defmodule Whistle.Program do
   end
   ```
   """
-  def fullscreen(conn, router, program_name, params) do
+  def fullscreen(conn, router, program_name, params \\ %{}) do
     encoded_params =
       params
       |> @json_library.encode!()
@@ -233,14 +241,20 @@ defmodule Whistle.Program do
   end
 
   @doc """
-  Use `embed/4` to embed a Program in a view.
+  Use `embed/4` to embed a Program in a view. It will render the view in plain HTML. When the Javscript library executes, it will automatically connect to the Program and become interactive.
 
-  In a `Phoenix.View`:
+  In a Phoenix template:
 
-  <%= embed(conn, MyProgramRouter, "counter") |> raw %>
+  ```html
+  <!-- lib/my_app_web/templates/page/index.html.eex -->
+  <div>
+    <%= embed(conn, MyProgramRouter, "counter") |> raw %>
+  </div>
+  ```
 
-  Or in a `Plug` or a `Phoenix.Controller`:
+  In a `Plug` or a `Phoenix.Controller` action:
 
+  ```
   def index(conn, _opts) do
     resp = embed(conn, MyProgramRouter, "counter")
 
@@ -248,6 +262,7 @@ defmodule Whistle.Program do
     |> Plug.Conn.put_resp_content_type("text/html")
     |> Plug.Conn.send_resp(200, resp)
   end
+  ```
   """
   def embed(conn, router, program_name, params \\ %{}) do
     embed_programs(conn, router, {0, Whistle.Html.program(program_name, params)})
