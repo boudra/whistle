@@ -35,6 +35,7 @@ What has been done, and what is left to do:
 def deps do
   [
     {:whistle, "~> 0.1.0"},
+    # {:whistle, git: "https://github.com/boudra/whistle", ref: "master"},
 
     # optional
     {:jason, "~> 1.0"}, # for encoding and decoding JSON
