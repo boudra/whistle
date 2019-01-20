@@ -45,6 +45,8 @@ const socket = Whistle.open(routerUrl);
 
 # Mounting programs
 
+Whsitle comes with the functions `Whistle.Program.fullscreen/4` and `Whistle.Program.embed/4` to mount programs from Elixir, but you can also embed them manually.
+
 You can mount your programs manually like this:
 
 ```js
