@@ -99,4 +99,7 @@ children = [
 ]
 ```
 
-Now that you have a router and a program, it's time to run everything! You can do so integrating Whistle [with your existing Phoenix project](/docs/phoenix.md) or [running Whislte on it's own](/docs/setup.md).
+Now that you have a router and a program, it's time to link everything up:
+
+- [Integrate with your existing Phoenix project](/docs/phoenix.md)
+- [Running Whislte on it's own](/docs/setup.md)
