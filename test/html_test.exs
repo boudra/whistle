@@ -18,6 +18,7 @@ defmodule HtmlTest do
     assert ~H(<div key="value"></div>) == Html.div(key: "value")
     assert ~H(<div key=<%= number %>></div>) == Html.div(key: number)
     assert ~H(<div on-click=<%= :test %>></div>) == Html.div(on: [click: :test])
+
     assert ~H(<div key=<%= number %>><span></span></div>) ==
              Html.div([key: number], [
                Html.span()

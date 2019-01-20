@@ -3,12 +3,19 @@ defmodule Whistle.Navigation do
   require Whistle.Html
 
   def link(path, attributes, children) do
-    Html.a(attributes ++ [href: path, on: [
-      click: [
-        prevent_default: true,
-        msg: {:_whistle_navigate, path_to_segments(path)}
-      ]
-    ]], children)
+    Html.a(
+      attributes ++
+        [
+          href: path,
+          on: [
+            click: [
+              prevent_default: true,
+              msg: {:_whistle_navigate, path_to_segments(path)}
+            ]
+          ]
+        ],
+      children
+    )
   end
 
   def html(attributes, children) do
@@ -24,8 +31,7 @@ defmodule Whistle.Navigation do
       alias Whistle.Navigation
 
       def update({:_whistle_navigate, path}, state, session) do
-        path_info =
-          Navigation.path_to_segments(path)
+        path_info = Navigation.path_to_segments(path)
 
         case update({:whistle_navigate, path}, state, session) do
           {:ok, state, session} ->
@@ -34,8 +40,7 @@ defmodule Whistle.Navigation do
       end
 
       def update({:_whistle_update_path, path}, state, session) do
-        path_info =
-          Navigation.path_to_segments(path)
+        path_info = Navigation.path_to_segments(path)
 
         {:ok, state, %{session | path: path}}
       end

@@ -10,7 +10,7 @@ defmodule Whistle.Router do
   end
 
   def start_link(args = {router, _args}) do
-    Supervisor.start_link(build_children(args), [name: router, strategy: :one_for_one])
+    Supervisor.start_link(build_children(args), name: router, strategy: :one_for_one)
   end
 
   def child_spec(args = {router, _args}) do

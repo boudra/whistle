@@ -12,5 +12,4 @@ defmodule Whistle.Config do
   def json_library() do
     Application.get_env(:whistle, :json_library, Jason)
   end
-
 end

@@ -34,7 +34,7 @@ defmodule Whistle.Html do
     :h1,
     :h2,
     :h3,
-    :h4,
+    :h4
   ]
 
   for tag <- @tags do
@@ -74,8 +74,7 @@ defmodule Whistle.Html do
   end
 
   def build_node(tag, attributes, children) do
-    children =
-      build_children(children)
+    children = build_children(children)
 
     {tag, maybe_unquote(attributes), maybe_unquote(children)}
   end

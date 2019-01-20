@@ -4,7 +4,6 @@ defmodule Whistle.Html.Dom do
   defmodule Diff do
     defstruct lazy_trees: %{}, patches: [], handlers: []
     @type t() :: %Diff{}
-
   end
 
   # patch operation codes
@@ -65,7 +64,6 @@ defmodule Whistle.Html.Dom do
       end
     end
   end
-
 
   def diff(state, path, {_, nil}, {key, new_node}) do
     add_node(state, path, key, new_node)
@@ -396,7 +394,7 @@ defmodule Whistle.Html.Dom do
   end
 
   def decode_attributes([["on", handler] | rest]) do
-    [{:on, [{String.to_existing_atom(handler),nil}]} | decode_attributes(rest)]
+    [{:on, [{String.to_existing_atom(handler), nil}]} | decode_attributes(rest)]
   end
 
   def decode_attributes([[key, value] | rest]) do

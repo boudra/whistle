@@ -69,10 +69,12 @@ defmodule Whistle.Html.Parser do
   attribute =
     utf8_string([?a..?z, ?-], min: 1)
     |> concat(whitespace)
-    |> optional(choice([
-      ignore(string("=")) |> concat(expr),
-      ignore(string("=")) |> concat(attribute_value)
-    ]))
+    |> optional(
+      choice([
+        ignore(string("=")) |> concat(expr),
+        ignore(string("=")) |> concat(attribute_value)
+      ])
+    )
     |> wrap()
 
   opening_tag =
@@ -123,14 +125,12 @@ defmodule Whistle.Html.Parser do
               {:on, [{String.to_atom(event), value}]}
 
             [key] ->
-              underscore_key =
-                String.replace(key, "-", "_")
+              underscore_key = String.replace(key, "-", "_")
 
               {String.to_atom(underscore_key), true}
 
             [key, value] ->
-              underscore_key =
-                String.replace(key, "-", "_")
+              underscore_key = String.replace(key, "-", "_")
 
               {String.to_atom(underscore_key), value}
           end)
@@ -155,7 +155,12 @@ defmodule Whistle.Html.Parser do
         List.first(nodes)
 
       {:error, reason, rest, _, {line, col}, _} ->
-        raise %ParseError{string: String.slice(rest, 0..40), line: line, col: col, message: reason}
+        raise %ParseError{
+          string: String.slice(rest, 0..40),
+          line: line,
+          col: col,
+          message: reason
+        }
     end
   end
 
