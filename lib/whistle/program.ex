@@ -163,7 +163,7 @@ defmodule Whistle.Program do
     socket = Whistle.Socket.new(conn)
 
     with {:ok, program, program_params} <- router.__match(channel_path),
-         {:ok, pid} <-
+         {:ok, _} <-
            Whistle.ProgramRegistry.ensure_started(router, program_name, program, program_params),
          {:ok, _, session} <-
            Whistle.ProgramInstance.authorize(
@@ -286,11 +286,11 @@ defmodule Whistle.Program do
       ], [initial_view]}}
   end
 
-  defp embed_programs(conn, router, node = {key, text}) when is_binary(text) do
+  defp embed_programs(_conn, _router, node = {_key, text}) when is_binary(text) do
     node
   end
 
-  defp embed_programs(conn, router, node = {key, {tag, attributes, children}}) do
+  defp embed_programs(conn, router, {_, {tag, attributes, children}}) do
     new_children =
       Enum.map(children, fn child ->
         embed_programs(conn, router, child)

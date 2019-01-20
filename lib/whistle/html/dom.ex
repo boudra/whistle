@@ -71,7 +71,7 @@ defmodule Whistle.Html.Dom do
     add_node(state, path, key, new_node)
   end
 
-  def diff(state, path, {key, {:program, _, _} = node}, {key, {:program, _, _} = node}) do
+  def diff(state, _path, {key, {:program, _, _} = node}, {key, {:program, _, _} = node}) do
     state
   end
 
@@ -79,12 +79,12 @@ defmodule Whistle.Html.Dom do
     add_patches(state, [[@replace_program, path ++ [key], program, params]])
   end
 
-  def diff(state, path, {key, node}, {key, new_node = {:program, _, _}}) do
+  def diff(state, path, {key, _}, {key, new_node = {:program, _, _}}) do
     replace_node(state, path, key, new_node)
   end
 
   # TODO: create @remove_event_handler patches for the DOM
-  def diff(state, path, {key, node}, {key, nil}) do
+  def diff(state, path, {key, _}, {key, nil}) do
     %{state | patches: [[@remove_node, path ++ [key]] | state.patches]}
   end
 
@@ -93,11 +93,11 @@ defmodule Whistle.Html.Dom do
     replace_node(state, path, key, new_node)
   end
 
-  def diff(state, path, {key, node}, {key, node}) do
+  def diff(state, _path, {key, node}, {key, node}) do
     state
   end
 
-  def diff(state, path, {key, old_node}, {key, new_node}) when is_binary(new_node) do
+  def diff(state, path, {key, _}, {key, new_node}) when is_binary(new_node) do
     replace_node(state, path, key, new_node)
   end
 
@@ -116,12 +116,12 @@ defmodule Whistle.Html.Dom do
     end)
   end
 
-  def diff_children(state, path, {key, _}, {key, _}) do
+  def diff_children(state, _path, {key, _}, {key, _}) do
     state
   end
 
   def diff_attributes(
-        state = %{handlers: handlers, patches: patches},
+        state = %{handlers: handlers},
         path,
         {key, {_, attributes, _}},
         {key, {_, new_attributes, _}}
@@ -244,11 +244,11 @@ defmodule Whistle.Html.Dom do
     %{state | handlers: handlers ++ new_handlers}
   end
 
-  defp add_node(state, path, key, node) when is_binary(node) do
+  defp add_node(state, path, _key, node) when is_binary(node) do
     add_patches(state, [[@add_node, path, node]])
   end
 
-  defp add_node(state = %{handlers: handlers}, path, key, node) do
+  defp add_node(state, path, key, node) do
     keyed_node = {key, node}
 
     {new_handlers, node_without_handlers} = extract_event_handlers(path, keyed_node)
@@ -270,7 +270,7 @@ defmodule Whistle.Html.Dom do
   end
 
   # TODO: create @remove_event_handler patches for the DOM
-  defp replace_node(state = %{handlers: handlers}, path, key, node) do
+  defp replace_node(state, path, key, node) do
     keyed_node = {key, node}
 
     {new_handlers, node_without_handlers} = extract_event_handlers(path, keyed_node)
@@ -351,11 +351,11 @@ defmodule Whistle.Html.Dom do
     {all_handlers, {key, {tag, new_attributes, new_children}}}
   end
 
-  def encode_node(state, path, {key, {:program, program, params}}) do
+  def encode_node(_state, _path, {_key, {:program, program, params}}) do
     ["program", program, params]
   end
 
-  def encode_node(state, path, {key, text}) when is_binary(text) do
+  def encode_node(_state, _path, {_key, text}) when is_binary(text) do
     text
   end
 
@@ -391,7 +391,7 @@ defmodule Whistle.Html.Dom do
     [{String.to_existing_atom(key), value} | decode_attributes(rest)]
   end
 
-  def decode_attributes([["data-" <> _, value] | rest]) do
+  def decode_attributes([["data-" <> _, _value] | rest]) do
     decode_attributes(rest)
   end
 
@@ -456,7 +456,7 @@ defmodule Whistle.Html.Dom do
     to_string(text)
   end
 
-  def node_to_string({key, {tag, attributes, children}}) do
+  def node_to_string({_key, {tag, attributes, children}}) do
     children =
       children
       |> Enum.map(&node_to_string/1)

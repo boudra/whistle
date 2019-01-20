@@ -19,7 +19,7 @@ defmodule Whistle.SocketHandler do
      }}
   end
 
-  def generate_connection_id() do
+  defp generate_connection_id() do
     4
     |> :crypto.strong_rand_bytes()
     |> Base.encode32(case: :lower, padding: false)
@@ -56,7 +56,7 @@ defmodule Whistle.SocketHandler do
         channel_path = String.split(program_name, ":")
 
         with {:ok, program, program_params} <- router.__match(channel_path),
-             {:ok, pid} <-
+             {:ok, _pid} <-
                ProgramRegistry.ensure_started(router, program_name, program, program_params),
              {:ok, new_socket, session} <-
                ProgramInstance.authorize(
@@ -98,7 +98,7 @@ defmodule Whistle.SocketHandler do
     end
   end
 
-  def terminate(reason, _req, %{socket: socket, programs: programs}) do
+  def terminate(_reason, _req, %{socket: socket, programs: programs}) do
     Enum.each(programs, fn {_, program} ->
       ProgramConnection.notify_disconnection(program, socket)
     end)
@@ -115,8 +115,6 @@ defmodule Whistle.SocketHandler do
         {:program_started, program_name},
         state = %{socket: socket, programs: programs}
       ) do
-    program = Map.get(programs, program_name)
-
     Enum.each(programs, fn program = %{name: ^program_name} ->
       ProgramConnection.notify_connection(program, socket)
     end)
@@ -149,7 +147,7 @@ defmodule Whistle.SocketHandler do
     end
   end
 
-  def websocket_info({:updated, name}, state = %{programs: programs}) do
+  def websocket_info({:updated, name}, state) do
     reply_program_view(state, name)
   end
 

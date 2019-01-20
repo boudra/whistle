@@ -13,7 +13,7 @@ defmodule Whistle.ProgramInstance do
     {:via, @registry, {registry, name}}
   end
 
-  def start_link(arg = {router, name, program, params}) do
+  def start_link(arg = {router, name, _program, _params}) do
     GenServer.start_link(__MODULE__, arg, name: via(router, name))
   end
 
@@ -76,7 +76,7 @@ defmodule Whistle.ProgramInstance do
   def handle_call(
         {:authorize, socket, params},
         _from,
-        instance = %{name: name, program: program, state: state}
+        instance = %{program: program, state: state}
       ) do
     if function_exported?(program, :authorize, 3) do
       case program.authorize(state, socket, params) do
