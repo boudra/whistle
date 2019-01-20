@@ -111,25 +111,29 @@ defmodule MyAppWeb.MainProgram do
   end
 
   def update({:navigate, path}, state, session) do
-    {:ok, state, %{path: path}}
+    {:ok, state, %{session | path: path}}
   end
 
   def view(state, %{path: "/"}) do
     ~H"""
-    <h1>Homepage</h1>
-    <a on-click=<%= {:navigate, "/counter"} %>>
-      Go to the counter
-    </a>
+    <div>
+      <h1>Homepage</h1>
+      <a on-click=<%= {:navigate, "/counter"} %>>
+        Go to the counter
+      </a>
+    </div>
     """
   end
 
   def view(state, %{path: "/counter"}) do
     ~H"""
-    <h1>Counter</h1>
-    <a on-click=<%= {:navigate, "/"} %>>
-      Back to the homepage
-    </a>
-    <program name="counter" params=<%= %{} %> />
+    <div>
+      <h1>Counter</h1>
+      <a on-click=<%= {:navigate, "/"} %>>
+        Back to the homepage
+      </a>
+      <program name="counter" params=<%= %{} %> />
+    </div>
     """
   end
 end
