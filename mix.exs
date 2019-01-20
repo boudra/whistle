@@ -8,7 +8,6 @@ defmodule Whistle.MixProject do
       elixir: "~> 1.6",
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
-        docs: :docs,
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
@@ -63,13 +62,13 @@ defmodule Whistle.MixProject do
   defp deps do
     [
       {:plug, "~> 1.7"},
-      {:nimble_parsec, "~> 0.5.0", override: true},
+      {:nimble_parsec, "~> 0.5.0"},
 
       # Optional dependencies
       {:jason, "~> 1.0", optional: true},
       {:plug_cowboy, "~> 2.0", optional: true},
-      {:ex_doc, ">= 0.0.0", only: :dev},
-      {:inch_ex, "~> 0.5", only: :docs},
+      {:ex_doc, "~> 0.19.0", only: :dev, runtime: false},
+      {:inch_ex, "~> 0.5", only: :dev},
       {:excoveralls, "~> 0.8", only: :test}
     ]
   end

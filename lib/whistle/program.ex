@@ -15,7 +15,30 @@ defmodule Whistle.Program do
     end
   end
 
-  @callback init(map()) :: {:ok, Whistle.state()}
+  @doc """
+  Receives parameters from the route, it should return the initial state or an error.
+
+  The parameters are taken from the program route:
+
+  ```
+  defmodule Router do
+    use Whistle.Router, path: "/ws"
+
+    match("chat:*room", ChatProgram, %{"other" => true})
+  end
+
+  defmodule ChatProgram do
+    use Program
+
+    # when joining `chat:1`
+    def init(%{"room" => "1", "other" => true}) do
+      {:ok, %{}}
+    end
+  end
+  ```
+  """
+  @callback init(map()) :: {:ok, Whistle.state()} | {:error, any()}
+
   @callback terminate(Whistle.state()) :: any()
   @callback authorize(Whistle.state(), Socket.t(), map()) ::
               {:ok, Socket.t(), Whistle.Session.t()} | {:error, any()}
