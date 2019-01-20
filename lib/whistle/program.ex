@@ -42,7 +42,7 @@ defmodule Whistle.Program do
   @doc """
   The terminate callback will be called when the program instance shuts down, it will receive the state.
 
-  Remember that Programs will be automatically respawned if they crash, so there is no need to try restart it yourself. This callback could be useful to serialize the state and then load it later in the `Whistle.Program.init/1` callback.
+  Remember that Programs will be automatically respawned if they crash, so there is no need to try restart it yourself. This callback could be useful to serialize the state and then load it later in the `init/1` callback.
   """
   @callback terminate(Whistle.state()) :: any()
 

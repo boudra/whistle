@@ -1,4 +1,5 @@
 defmodule Whistle.Config do
+  @moduledoc false
 
   def registry() do
     Application.get_env(:whistle, :program_registry, Elixir.Registry)

@@ -3,6 +3,8 @@ defmodule Whistle.Html.Dom do
 
   defmodule Diff do
     defstruct lazy_trees: %{}, patches: [], handlers: []
+    @type t() :: %Diff{}
+
   end
 
   # patch operation codes
