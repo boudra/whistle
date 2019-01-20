@@ -249,7 +249,7 @@ defmodule Whistle.Program do
     |> Plug.Conn.send_resp(200, resp)
   end
   """
-  def embed(conn, router, program_name, params // %{}) do
+  def embed(conn, router, program_name, params \\ %{}) do
     embed_programs(conn, router, {0, Whistle.Html.program(program_name, params)})
     |> Whistle.Html.Dom.node_to_string()
   end
