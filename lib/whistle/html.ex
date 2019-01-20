@@ -3,6 +3,7 @@ defmodule Whistle.Html do
     :div,
     :img,
     :a,
+    :i,
     :form,
     :table,
     :tr,
