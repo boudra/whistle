@@ -3,6 +3,8 @@ defmodule Whistle.SocketHandler do
 
   alias Whistle.{ProgramInstance, ProgramRegistry, ProgramConnection, Socket}
 
+  require Whistle.Config
+
   @json_library Whistle.Config.json_library()
 
   def init(req, {router, []}) do
