@@ -11,7 +11,9 @@ defmodule Whistle.Token do
     |> MessageEncryptor.encrypt(secret, sign_secret)
   end
 
-  def verify(secret_key_base, encrypt_salt, sign_salt, token, max_age \\ :infinity) do
+  def verify(secret_key_base, encrypt_salt, sign_salt, token, max_age \\ :infinity)
+
+  def verify(secret_key_base, encrypt_salt, sign_salt, token, max_age) when is_binary(token) do
     secret = KeyGenerator.generate(secret_key_base, encrypt_salt)
     sign_secret = KeyGenerator.generate(secret_key_base, sign_salt)
 
@@ -30,8 +32,8 @@ defmodule Whistle.Token do
     end
   end
 
-  def verify(_context, salt, nil, _opts) when is_binary(salt) do
-    {:error, :missing}
+  def verify(_, _, _, _, _) do
+    {:error, :invalid}
   end
 
   defp expired?(_signed, :infinity), do: false
