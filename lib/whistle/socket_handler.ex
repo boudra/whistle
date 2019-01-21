@@ -72,7 +72,7 @@ defmodule Whistle.SocketHandler do
             router: router,
             name: program_name,
             handlers: %{},
-            vdom: {0, Whistle.Html.Dom.decode_element(dom)},
+            vdom: {0, Whistle.Html.Dom.decode_node(dom)},
             session: session
           }
 

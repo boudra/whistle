@@ -117,4 +117,16 @@ defmodule DomTest do
              } = Dom.diff(node, node2)
     end
   end
+
+  test "encode node" do
+    assert Dom.encode_node(%{}, [], {0, Html.div([class: "test"], [
+      Html.p([], "test")
+    ])}) == ["div", %{"class" => "test"}, [["p", %{}, ["test"]]]]
+  end
+
+  test "decode node" do
+    assert Dom.decode_node(["div", %{"class" => "test"}, [["p", %{}, ["test"]]]]) == Html.div([class: "test"], [
+      Html.p([], "test")
+    ])
+  end
 end

@@ -360,13 +360,15 @@
         ];
       }
 
-      var attributes = Array.prototype.map.call(node.attributes, function(e) {
+      var attributes = Array.prototype.reduce.call(node.attributes, function(acc, e) {
         var value = e.value;
         if(value === "true") {
           value = true;
         }
-        return [e.name, value];
-      });
+        acc[e.name] = value;
+
+        return acc;
+      }, {});
 
       // attributes = self.eventHandlers.reduce(function(acc, handler) {
       //   if(handler.node === node) {

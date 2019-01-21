@@ -385,42 +385,46 @@ defmodule Whistle.Html.Dom do
     []
   end
 
-  def decode_attributes([[key = "data-whistle-navigation", value] | rest]) do
+  def decode_attributes([{key = "data-whistle-navigation", value} | rest]) do
     [{String.to_existing_atom(key), value} | decode_attributes(rest)]
   end
 
-  def decode_attributes([["data-" <> _, _value] | rest]) do
+  def decode_attributes([{"data-" <> _, _value} | rest]) do
     decode_attributes(rest)
   end
 
-  def decode_attributes([["on", handler] | rest]) do
+  def decode_attributes([{"on", handler} | rest]) do
     [{:on, [{String.to_existing_atom(handler), nil}]} | decode_attributes(rest)]
   end
 
-  def decode_attributes([[key, value] | rest]) do
+  def decode_attributes([{key, value} | rest]) do
     [{String.to_existing_atom(key), value} | decode_attributes(rest)]
   end
 
-  def decode_element(nil) do
+  def decode_node(nil) do
     nil
   end
 
-  def decode_element(element) when is_binary(element) do
+  def decode_node(element) when is_binary(element) do
     Whistle.Html.text(element)
   end
 
-  def decode_element(["program", program, params]) do
+  def decode_node(["program", program, params]) do
     {:program, program, params}
   end
 
-  def decode_element(["script", attributes, [""]]) do
-    decode_element(["script", attributes, []])
+  def decode_node(["script", attributes, [""]]) do
+    decode_node(["script", attributes, []])
   end
 
-  def decode_element([tag, attributes, children]) do
-    children = Enum.map(children, &decode_element/1)
+  def decode_node([tag, attributes, children]) do
+    children = Enum.map(children, &decode_node/1)
+    decoded_attributes =
+      attributes
+      |> Enum.to_list()
+      |> decode_attributes()
 
-    Whistle.Html.build_node(tag, decode_attributes(attributes), children)
+    Whistle.Html.build_node(tag, decoded_attributes, children)
   end
 
   defp attributes_to_string(attributes) do
