@@ -47,11 +47,16 @@ defmodule Whistle.Html.Parser do
   tag_name = ascii_string([?a..?z, ?A..?Z], min: 1)
 
   text =
-    utf8_char([not: ?<])
-    |> repeat(lookahead_not(choice([
-      ignore(string("<")),
-      ignore(string("{{"))
-    ])) |> utf8_char([]))
+    utf8_char(not: ?<)
+    |> repeat(
+      lookahead_not(
+        choice([
+          ignore(string("<")),
+          ignore(string("{{"))
+        ])
+      )
+      |> utf8_char([])
+    )
     |> reduce({List, :to_string, []})
     |> map(:html_text)
 
@@ -115,12 +120,18 @@ defmodule Whistle.Html.Parser do
     ])
     |> post_traverse(:validate_node)
 
-  defparsecp(:parse_children, whitespace |> repeat(choice([
-    tag,
-    comment,
-    expr |> map(:html_text),
-    text
-  ])))
+  defparsecp(
+    :parse_children,
+    whitespace
+    |> repeat(
+      choice([
+        tag,
+        comment,
+        expr |> map(:html_text),
+        text
+      ])
+    )
+  )
 
   defparsecp(:parse_root, parsec(:parse_children) |> eos)
 
@@ -155,17 +166,17 @@ defmodule Whistle.Html.Parser do
           |> Keyword.get_values(:child)
           |> Enum.reverse()
 
-        acc = if(tag == "program") do
-          params = Keyword.get(attributes, :params, Macro.escape(%{}))
+        acc =
+          if(tag == "program") do
+            params = Keyword.get(attributes, :params, Macro.escape(%{}))
 
-          Html.program(
-            Keyword.get(attributes, :name),
-            params
-          )
-        else
-          Html.build_node(tag, attributes, List.flatten(children))
-        end
-
+            Html.program(
+              Keyword.get(attributes, :name),
+              params
+            )
+          else
+            Html.build_node(tag, attributes, List.flatten(children))
+          end
 
         {[acc], context}
 

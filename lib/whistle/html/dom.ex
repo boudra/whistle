@@ -418,8 +418,7 @@ defmodule Whistle.Html.Dom do
   end
 
   def decode_element([tag, attributes, children]) do
-    children =
-      Enum.map(children, &decode_element/1)
+    children = Enum.map(children, &decode_element/1)
 
     Whistle.Html.build_node(tag, decode_attributes(attributes), children)
   end

@@ -69,7 +69,6 @@ defmodule ProgramTest do
   @program ExampleProgram
   @program_name "counter"
 
-
   setup do
     [conn: conn(:get, "/")]
   end
