@@ -25,6 +25,9 @@ defmodule Whistle.Router do
     Supervisor.child_spec(default, [])
   end
 
+  @doc """
+  Returns the full URL of the Websocket Handler.
+  """
   def url(%Plug.Conn{} = conn, router) do
     IO.iodata_to_binary([
       http_to_ws_scheme(conn.scheme),
@@ -42,6 +45,14 @@ defmodule Whistle.Router do
   defp request_url_port(:https, 443), do: ""
   defp request_url_port(_, port), do: [?:, Integer.to_string(port)]
 
+  defmacro __before_compile__(_env) do
+    quote do
+      def __match(_) do
+        {:error, :not_found}
+      end
+    end
+  end
+
   defmacro __using__(path: path) do
     path_info = String.split(path, "/", trim: true)
 
@@ -49,8 +60,14 @@ defmodule Whistle.Router do
       # @behaviour Whistle.Router
       import Whistle.Router
 
+      @before_compile Whistle.Router
+
       def child_spec(args) do
         Whistle.Router.child_spec({__MODULE__, args})
+      end
+
+      def start_link(args) do
+        Whistle.Router.start_link({__MODULE__, args})
       end
 
       def __path() do
