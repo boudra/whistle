@@ -28,6 +28,7 @@ What has been done, and what is left to do:
 - [ ] Rewrite front-end library in ES6+/Typescript for easier development
 - [ ] Write front-end library tests
 - [ ] DOM list patching (reordering, inserting)
+- [ ] Autoreloading, live code programs
 
 ## Installation
 
