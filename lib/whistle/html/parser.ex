@@ -155,7 +155,17 @@ defmodule Whistle.Html.Parser do
           |> Keyword.get_values(:child)
           |> Enum.reverse()
 
-        acc = Html.build_node(tag, attributes, List.flatten(children))
+        acc = if(tag == "program") do
+          params = Keyword.get(attributes, :params, Macro.escape(%{}))
+
+          Html.program(
+            Keyword.get(attributes, :name),
+            params
+          )
+        else
+          Html.build_node(tag, attributes, List.flatten(children))
+        end
+
 
         {[acc], context}
 
@@ -172,7 +182,7 @@ defmodule Whistle.Html.Parser do
       {:ok, [node], _, _, _, _} ->
         node
 
-      {:ok, nodes, _, _, _, _} ->
+      {:ok, _, _, _, _, _} ->
         raise %ParseError{
           string: String.slice(string, 0..40),
           line: 1,

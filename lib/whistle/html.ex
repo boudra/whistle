@@ -50,13 +50,17 @@ defmodule Whistle.Html do
     children
     |> List.flatten()
     |> Enum.with_index()
-    |> Enum.map(fn {node, index} ->
-      {index, node}
+    |> Enum.map(fn
+      {child = {index, _node}, _} when is_integer(index) ->
+        child
+
+      {node, index} ->
+        {index, node}
     end)
   end
 
   def build_children(children) do
-    build_children([children])
+    children
   end
 
   def build_node(tag, attributes, text) when is_binary(text) do
@@ -78,10 +82,10 @@ defmodule Whistle.Html do
   end
 
   def lazy(fun, args) do
-    {:lazy, fun, args}
+    {:lazy, {fun, args}}
   end
 
   def program(name, params) do
-    {:program, name, params}
+    {:program, {name, params}}
   end
 end

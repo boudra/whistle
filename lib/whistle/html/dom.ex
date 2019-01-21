@@ -34,7 +34,7 @@ defmodule Whistle.Html.Dom do
     state
   end
 
-  def diff(state, path, {_, nil}, {key, {:lazy, fun, args}}) do
+  def diff(state, path, {_, nil}, {key, {:lazy, {fun, args}}}) do
     new_node = apply(fun, args)
 
     state
@@ -45,8 +45,8 @@ defmodule Whistle.Html.Dom do
   def diff(
         state = %{lazy_trees: tree},
         path,
-        {key, {:lazy, fun, args}},
-        {key, {:lazy, new_fun, new_args}}
+        {key, {:lazy, {fun, args}}},
+        {key, {:lazy, {new_fun, new_args}}}
       ) do
     if fun === new_fun and args === new_args do
       state
@@ -440,10 +440,6 @@ defmodule Whistle.Html.Dom do
         ~s(#{key}="#{value}")
     end)
     |> Enum.join(" ")
-  end
-
-  def node_to_string(node = {_, _, _}) do
-    node_to_string({0, node})
   end
 
   def node_to_string({_, text}) when is_binary(text) do

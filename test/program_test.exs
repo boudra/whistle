@@ -1,9 +1,10 @@
 defmodule ProgramTest do
   use ExUnit.Case
   doctest Whistle
+  use Plug.Test
 
   require Whistle.Html
-  alias Whistle.{Html, Router, ProgramInstance, ProgramRegistry}
+  alias Whistle.{Program, Html, ProgramInstance, ProgramRegistry}
 
   defmodule ExampleProgram do
     use Whistle.Program
@@ -31,13 +32,52 @@ defmodule ProgramTest do
     end
   end
 
+  defmodule ExampleFullProgram do
+    use Whistle.Program
+
+    def init(_params) do
+      {:ok, 0}
+    end
+
+    def authorize(_state, socket, _params) do
+      {:ok, socket, nil}
+    end
+
+    def update({:change, n}, state, session) do
+      {:ok, state + n, session}
+    end
+
+    def view(_state, _session) do
+      params = %{"hello" => true}
+
+      ~H"""
+      <html>
+        <program name="counter" params={{ params }} />
+      </html>
+      """
+    end
+  end
+
+  defmodule ExampleRouter do
+    use Whistle.Router, path: "/ws"
+
+    match("counter", ExampleProgram, %{})
+    match("full", ExampleFullProgram, %{})
+  end
+
   @router ExampleRouter
   @program ExampleProgram
-  @program_name "example"
+  @program_name "counter"
+
+
+  setup do
+    [conn: conn(:get, "/")]
+  end
 
   test "programs" do
-    {:ok, _router_pid} = Router.start_link({@router, []})
-    {:ok, pid} = ProgramRegistry.ensure_started(@router, @program_name, @program, %{})
+    start_supervised(@router)
+
+    assert {:ok, pid} = ProgramRegistry.ensure_started(@router, @program_name, @program, %{})
 
     assert pid == ProgramRegistry.pid(@router, @program_name)
 
@@ -62,5 +102,24 @@ defmodule ProgramTest do
                 Html.span([], ["The current number is: ", "2"]),
                 Html.button([on: [click: {:change, -1}]], "-")
               ])}
+  end
+
+  test "embed/4" do
+    start_supervised(@router)
+
+    assert Program.embed(%Plug.Conn{}, @router, @program_name) =~ "The current number is: 0"
+    assert ProgramInstance.update(@router, @program_name, {:change, 2}, %{}) == {:ok, %{}, []}
+    assert Program.embed(%Plug.Conn{}, @router, @program_name) =~ "The current number is: 2"
+  end
+
+  test "fullscreen/4", %{conn: conn} do
+    start_supervised(@router)
+
+    assert_raise RuntimeError, ~r/.*/, fn ->
+      Program.fullscreen(conn, @router, @program_name)
+    end
+
+    assert %{resp_body: resp} = Program.fullscreen(conn, @router, "full")
+    assert resp =~ "The current number is: 0"
   end
 end
