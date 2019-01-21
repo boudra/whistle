@@ -42,21 +42,13 @@ defmodule Whistle.Html do
     tag_name = Atom.to_string(tag)
 
     defmacro unquote(tag)(attributes \\ [], children \\ []) do
-      node = build_node(unquote(tag_name), attributes, children)
-      Macro.escape(node, unquote: true)
+      build_node(unquote(tag_name), attributes, children)
     end
-  end
-
-  defp maybe_unquote([]) do
-    []
-  end
-
-  defp maybe_unquote(arg) do
-    {:unquote, [], [arg]}
   end
 
   def build_children(children) when is_list(children) do
     children
+    |> List.flatten()
     |> Enum.with_index()
     |> Enum.map(fn {node, index} ->
       {index, node}
@@ -64,10 +56,7 @@ defmodule Whistle.Html do
   end
 
   def build_children(children) do
-    quote do
-      unquote(children)
-      |> Whistle.Html.build_children()
-    end
+    build_children([children])
   end
 
   def build_node(tag, attributes, text) when is_binary(text) do
@@ -77,12 +66,11 @@ defmodule Whistle.Html do
   def build_node(tag, attributes, children) do
     children = build_children(children)
 
-    {tag, maybe_unquote(attributes), maybe_unquote(children)}
+    {tag, {attributes, children}}
   end
 
   defmacro node(tag, attributes, children) do
-    node = build_node(tag, attributes, children)
-    Macro.escape(node, unquote: true)
+    build_node(tag, attributes, children)
   end
 
   def text(content) do

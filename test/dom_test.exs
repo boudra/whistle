@@ -21,10 +21,10 @@ defmodule DomTest do
 
   test "html helpers" do
     assert Html.p([], []) == Html.node("p", [], [])
-    assert Html.p([], []) == {"p", [], []}
-    assert Html.p([class: "class"], []) == {"p", [class: "class"], []}
+    assert Html.p([], []) == {"p", {[], []}}
+    assert Html.p([class: "class"], []) == {"p", {[class: "class"], []}}
 
-    assert Html.p([class: "class"], "some text") == {"p", [class: "class"], [{0, "some text"}]}
+    assert Html.p([class: "class"], "some text") == {"p", {[class: "class"], [{0, "some text"}]}}
 
     assert Html.p([class: "class"], [Html.text("some text")]) ==
              Html.p([class: "class"], "some text")

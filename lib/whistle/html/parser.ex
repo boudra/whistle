@@ -38,14 +38,23 @@ defmodule Whistle.Html.Parser do
   end
 
   expr =
-    ignore(string("<%="))
-    |> repeat(lookahead_not(string("%>")) |> utf8_char([]))
-    |> ignore(string("%>"))
+    ignore(string("{{"))
+    |> repeat(lookahead_not(string("}}")) |> utf8_char([]))
+    |> ignore(string("}}"))
     |> reduce({List, :to_string, []})
     |> map(:string_to_quoted)
 
   tag_name = ascii_string([?a..?z, ?A..?Z], min: 1)
-  text = choice([expr, utf8_string([not: ?<], min: 1)]) |> map(:html_text)
+
+  text =
+    utf8_char([not: ?<])
+    |> repeat(lookahead_not(choice([
+      ignore(string("<")),
+      ignore(string("{{"))
+    ])) |> utf8_char([]))
+    |> reduce({List, :to_string, []})
+    |> map(:html_text)
+
   whitespace = ascii_char([?\s, ?\n]) |> repeat() |> ignore()
 
   closing_tag =
@@ -106,7 +115,13 @@ defmodule Whistle.Html.Parser do
     ])
     |> post_traverse(:validate_node)
 
-  defparsecp(:parse_children, whitespace |> repeat(choice([tag, text, comment])))
+  defparsecp(:parse_children, whitespace |> repeat(choice([
+    tag,
+    comment,
+    expr |> map(:html_text),
+    text
+  ])))
+
   defparsecp(:parse_root, parsec(:parse_children) |> eos)
 
   defp validate_node(_rest, args, context, _line, _offset) do
@@ -142,7 +157,7 @@ defmodule Whistle.Html.Parser do
 
         acc = Html.build_node(tag, attributes, List.flatten(children))
 
-        {[Macro.escape(acc, unquote: true)], context}
+        {[acc], context}
 
       true ->
         {:error, "Closing tag #{closing_tag} did not match opening tag #{opening_tag}"}
@@ -151,8 +166,19 @@ defmodule Whistle.Html.Parser do
 
   defp do_parse(string) do
     case parse_root(string) do
+      {:ok, [], _, _, _, _} ->
+        nil
+
+      {:ok, [node], _, _, _, _} ->
+        node
+
       {:ok, nodes, _, _, _, _} ->
-        List.first(nodes)
+        raise %ParseError{
+          string: String.slice(string, 0..40),
+          line: 1,
+          col: 0,
+          message: "HTML literals must return one root node"
+        }
 
       {:error, reason, rest, _, {line, col}, _} ->
         raise %ParseError{

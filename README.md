@@ -74,16 +74,20 @@ defmodule MyAppWeb.ExampleProgram do
     {:ok, 0}
   end
 
-  def update({:change, n}, state, session) do
-    {:ok, state + n, session}
+  def update(:increment, state, session) do
+    {:ok, state + 1, session}
+  end
+
+  def update(:decrement, state, session) do
+    {:ok, state - 1, session}
   end
 
   def view(state, _session) do
     ~H"""
     <div>
-      <button on-click=<%= {:change, 1} %>>+</button>
-      <span>The current number is: <%= state %></span>
-      <button on-click=<%= {:change, -1} %>>-</button>
+      <button on-click={{ :increment }}>+</button>
+      <span>The current number is: {{ state }}></span>
+      <button on-click={{ :decrement }}>-</button>
     </div>
     """
   end
@@ -119,7 +123,7 @@ defmodule MyAppWeb.MainProgram do
     ~H"""
     <div>
       <h1>Homepage</h1>
-      <a on-click=<%= {:navigate, "/counter"} %>>
+      <a on-click={{ {:navigate, "/counter"} }}>
         Go to the counter
       </a>
     </div>
@@ -130,10 +134,10 @@ defmodule MyAppWeb.MainProgram do
     ~H"""
     <div>
       <h1>Counter</h1>
-      <a on-click=<%= {:navigate, "/"} %>>
+      <a on-click={{ {:navigate, "/"} }}>
         Back to the homepage
       </a>
-      <program name="counter" params=<%= %{} %> />
+      <program name="counter" params={{ %{} }}> />
     </div>
     """
   end

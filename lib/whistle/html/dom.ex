@@ -69,15 +69,15 @@ defmodule Whistle.Html.Dom do
     add_node(state, path, key, new_node)
   end
 
-  def diff(state, _path, {key, {:program, _, _} = node}, {key, {:program, _, _} = node}) do
+  def diff(state, _path, {key, {:program, _} = node}, {key, {:program, {_, _}} = node}) do
     state
   end
 
-  def diff(state, path, {key, {:program, _, _}}, {key, {:program, program, params}}) do
+  def diff(state, path, {key, {:program, _}}, {key, {:program, {program, params}}}) do
     add_patches(state, [[@replace_program, path ++ [key], program, params]])
   end
 
-  def diff(state, path, {key, _}, {key, new_node = {:program, _, _}}) do
+  def diff(state, path, {key, _}, {key, new_node = {:program, _}}) do
     replace_node(state, path, key, new_node)
   end
 
@@ -86,7 +86,7 @@ defmodule Whistle.Html.Dom do
     %{state | patches: [[@remove_node, path ++ [key]] | state.patches]}
   end
 
-  def diff(state, path, {key, {tag, _, _}}, {key, new_node = {new_tag, _, _}})
+  def diff(state, path, {key, {tag, _}}, {key, new_node = {new_tag, _}})
       when tag != new_tag do
     replace_node(state, path, key, new_node)
   end
@@ -105,7 +105,7 @@ defmodule Whistle.Html.Dom do
     |> diff_children(path, node1, node2)
   end
 
-  def diff_children(state, path, {key, {_, _, children}}, {key, {_, _, new_children}})
+  def diff_children(state, path, {key, {_, {_, children}}}, {key, {_, {_, new_children}}})
       when is_list(children) and is_list(new_children) do
     children
     |> zip(new_children)
@@ -121,8 +121,8 @@ defmodule Whistle.Html.Dom do
   def diff_attributes(
         state = %{handlers: handlers},
         path,
-        {key, {_, attributes, _}},
-        {key, {_, new_attributes, _}}
+        {key, {_, {attributes, _}}},
+        {key, {_, {new_attributes, _}}}
       ) do
     new_patches =
       attributes
@@ -312,7 +312,7 @@ defmodule Whistle.Html.Dom do
     |> Map.put(:key, key)
   end
 
-  def extract_event_handlers(_path, node = {_key, {:program, _, _}}) do
+  def extract_event_handlers(_path, node = {_key, {:program, _}}) do
     {[], node}
   end
 
@@ -320,7 +320,7 @@ defmodule Whistle.Html.Dom do
     {[], node}
   end
 
-  def extract_event_handlers(path, {key, {tag, attributes, children}}) do
+  def extract_event_handlers(path, {key, {tag, {attributes, children}}}) do
     full_key = path ++ [key]
     string_key = Enum.join(full_key, ".")
 
@@ -346,10 +346,10 @@ defmodule Whistle.Html.Dom do
         {handlers ++ child_handlers, children ++ [child]}
       end)
 
-    {all_handlers, {key, {tag, new_attributes, new_children}}}
+    {all_handlers, {key, {tag, {new_attributes, new_children}}}}
   end
 
-  def encode_node(_state, _path, {_key, {:program, program, params}}) do
+  def encode_node(_state, _path, {_key, {:program, {program, params}}}) do
     ["program", program, params]
   end
 
@@ -357,11 +357,11 @@ defmodule Whistle.Html.Dom do
     text
   end
 
-  def encode_node(state, path, {key, {:lazy, fun, args}}) do
+  def encode_node(state, path, {key, {:lazy, {fun, args}}}) do
     encode_node(state, path, {key, Map.get(state.lazy_trees, {fun, args})})
   end
 
-  def encode_node(state, path, {key, {tag, attributes, children}}) do
+  def encode_node(state, path, {key, {tag, {attributes, children}}}) do
     key = path ++ [key]
 
     attributes =
@@ -419,13 +419,9 @@ defmodule Whistle.Html.Dom do
 
   def decode_element([tag, attributes, children]) do
     children =
-      children
-      |> Enum.with_index()
-      |> Enum.map(fn {node, index} ->
-        {index, decode_element(node)}
-      end)
+      Enum.map(children, &decode_element/1)
 
-    {tag, decode_attributes(attributes), children}
+    Whistle.Html.build_node(tag, decode_attributes(attributes), children)
   end
 
   defp attributes_to_string(attributes) do
@@ -454,7 +450,7 @@ defmodule Whistle.Html.Dom do
     to_string(text)
   end
 
-  def node_to_string({_key, {tag, attributes, children}}) do
+  def node_to_string({_key, {tag, {attributes, children}}}) do
     children =
       children
       |> Enum.map(&node_to_string/1)
