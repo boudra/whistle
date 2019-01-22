@@ -37,7 +37,6 @@ Now let's define the main Plug that is going to serve normal HTTP requests befor
 ```elixir
 # lib/my_app_web/plug.ex
 
-
 defmodule MyAppWeb.Plug do
   use Plug.Builder
 

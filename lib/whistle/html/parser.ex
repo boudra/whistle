@@ -44,7 +44,8 @@ defmodule Whistle.Html.Parser do
     |> reduce({List, :to_string, []})
     |> map(:string_to_quoted)
 
-  tag_name = ascii_string([?a..?z, ?A..?Z], min: 1)
+  tag_name =
+    ascii_string([?a..?z, ?0..?9, ?A..?Z, ?-], min: 1)
 
   text =
     utf8_char(not: ?<)
@@ -81,7 +82,7 @@ defmodule Whistle.Html.Parser do
     |> reduce({List, :to_string, []})
 
   attribute =
-    utf8_string([?a..?z, ?-], min: 1)
+    tag_name
     |> concat(whitespace)
     |> optional(
       choice([
@@ -213,6 +214,11 @@ defmodule Whistle.Html.Parser do
 
   defmacro parse(string) do
     do_parse(string)
+  end
+
+  defmacro parse_file(file) do
+    data = File.read!(file)
+    do_parse(data)
   end
 
   defmacro sigil_H({:<<>>, _, [string]}, _) do
