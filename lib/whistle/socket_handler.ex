@@ -1,7 +1,7 @@
 defmodule Whistle.SocketHandler do
   @behaviour :cowboy_websocket
 
-  alias Whistle.{ProgramInstance, ProgramRegistry, ProgramConnection, Socket}
+  alias Whistle.{Program, Socket}
 
   require Whistle.Config
 
@@ -42,8 +42,8 @@ defmodule Whistle.SocketHandler do
       {:ok, %{"type" => "leave", "program" => program_id}} ->
         program = Map.get(programs, program_id)
 
-        ProgramRegistry.unsubscribe(router, program.name, self())
-        ProgramConnection.notify_disconnection(program, socket)
+        Program.Registry.unsubscribe(router, program.name, self())
+        Program.Connection.notify_disconnection(program, socket)
 
         {:ok, %{state | programs: Map.delete(programs, program_id)}}
 
@@ -59,19 +59,16 @@ defmodule Whistle.SocketHandler do
 
         with {:ok, program, program_params} <- router.__match(channel_path),
              {:ok, _pid} <-
-               ProgramRegistry.ensure_started(router, program_name, program, program_params),
+               Program.Registry.ensure_started(router, program_name, program, program_params),
              {:ok, new_socket, session} <-
-               ProgramInstance.authorize(
+               Program.Instance.authorize(
                  router,
                  program_name,
                  socket,
                  Map.merge(program_params, params)
                ),
-             :ok <- ProgramRegistry.subscribe(router, program_name, self()) do
-          IO.inspect({"raw", dom})
-          IO.inspect({"decoded", Whistle.Html.Dom.decode_node(dom)})
-
-          program_connection = %ProgramConnection{
+             :ok <- Program.Registry.subscribe(router, program_name, self()) do
+          program_connection = %Program.Connection{
             router: router,
             name: program_name,
             handlers: %{},
@@ -88,7 +85,7 @@ defmodule Whistle.SocketHandler do
               programId: program_id
             })
 
-          ProgramConnection.notify_connection(program_connection, socket)
+          Program.Connection.notify_connection(program_connection, socket)
 
           # trigger an initial render
           send(self(), {:updated, program_name})
@@ -105,7 +102,7 @@ defmodule Whistle.SocketHandler do
 
   def terminate(_reason, _req, %{socket: socket, programs: programs}) do
     Enum.each(programs, fn {_, program} ->
-      ProgramConnection.notify_disconnection(program, socket)
+      Program.Connection.notify_disconnection(program, socket)
     end)
 
     :ok
@@ -121,7 +118,7 @@ defmodule Whistle.SocketHandler do
         state = %{socket: socket, programs: programs}
       ) do
     Enum.each(programs, fn program = %{name: ^program_name} ->
-      ProgramConnection.notify_connection(program, socket)
+      Program.Connection.notify_connection(program, socket)
     end)
 
     reply_program_view(state, program_name)
@@ -130,7 +127,7 @@ defmodule Whistle.SocketHandler do
   def websocket_info({:update, program_name, handler, args}, state = %{programs: programs}) do
     program = Map.get(programs, program_name)
 
-    case ProgramConnection.update(program, {handler, args}) do
+    case Program.Connection.update(program, {handler, args}) do
       {:ok, new_program, replies} ->
         new_state = %{state | programs: Map.put(programs, program_name, new_program)}
 
@@ -160,8 +157,8 @@ defmodule Whistle.SocketHandler do
     {new_programs, responses} =
       Enum.reduce(programs, {[], []}, fn
         {id, program = %{name: ^name}}, {programs, responses} ->
-          new_vdom = ProgramConnection.view(program)
-          {new_program, diff} = ProgramConnection.put_new_vdom(program, new_vdom)
+          new_vdom = Program.Connection.view(program)
+          {new_program, diff} = Program.Connection.put_new_vdom(program, new_vdom)
 
           new_responses =
             if length(diff) > 0 do

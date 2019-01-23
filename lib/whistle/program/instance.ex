@@ -1,7 +1,7 @@
-defmodule Whistle.ProgramInstance do
+defmodule Whistle.Program.Instance do
   use GenServer
 
-  alias Whistle.{ProgramRegistry, ProgramInstance}
+  alias Whistle.Program
 
   @registry Whistle.Config.registry()
 
@@ -20,9 +20,9 @@ defmodule Whistle.ProgramInstance do
   def init({router, name, program, params}) do
     case program.init(params) do
       {:ok, state} ->
-        ProgramRegistry.broadcast(router, name, {:program_started, name})
+        Program.Registry.broadcast(router, name, {:program_started, name})
 
-        instance = %ProgramInstance{
+        instance = %Program.Instance{
           router: router,
           name: name,
           program: program,
@@ -42,7 +42,7 @@ defmodule Whistle.ProgramInstance do
       program.terminate(state)
     end
 
-    ProgramRegistry.broadcast(router, name, {:program_terminating, name, reason})
+    Program.Registry.broadcast(router, name, {:program_terminating, name, reason})
   end
 
   def handle_call(
@@ -54,11 +54,11 @@ defmodule Whistle.ProgramInstance do
 
     case program.update(message, state, session) do
       {:reply, new_state, new_session, reply} ->
-        ProgramRegistry.broadcast(router, name, {:updated, name})
+        Program.Registry.broadcast(router, name, {:updated, name})
         {:reply, {:ok, new_session, [reply]}, %{instance | state: new_state}}
 
       {:ok, new_state, new_session} ->
-        ProgramRegistry.broadcast(router, name, {:updated, name})
+        Program.Registry.broadcast(router, name, {:updated, name})
 
         {:reply, {:ok, new_session, []}, %{instance | state: new_state}}
 
@@ -101,7 +101,7 @@ defmodule Whistle.ProgramInstance do
           {:noreply, instance}
 
         {:ok, new_state} ->
-          ProgramRegistry.broadcast(router, name, {:updated, name})
+          Program.Registry.broadcast(router, name, {:updated, name})
           {:noreply, %{instance | state: new_state}}
 
         {:error, _} ->
@@ -127,7 +127,7 @@ defmodule Whistle.ProgramInstance do
   end
 
   def send_info(router, name, message) do
-    case ProgramRegistry.pid(router, name) do
+    case Program.Registry.pid(router, name) do
       :undefined ->
         :error
 

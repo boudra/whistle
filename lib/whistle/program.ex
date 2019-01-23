@@ -164,15 +164,15 @@ defmodule Whistle.Program do
 
     with {:ok, program, program_params} <- router.__match(channel_path),
          {:ok, _} <-
-           Whistle.ProgramRegistry.ensure_started(router, program_name, program, program_params),
+           Whistle.Program.Registry.ensure_started(router, program_name, program, program_params),
          {:ok, _, session} <-
-           Whistle.ProgramInstance.authorize(
+           Whistle.Program.Instance.authorize(
              router,
              program_name,
              socket,
              Map.merge(program_params, params)
            ) do
-      Whistle.ProgramInstance.view(router, program_name, session)
+      Whistle.Program.Instance.view(router, program_name, session)
     end
   end
 

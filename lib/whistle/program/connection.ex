@@ -1,5 +1,5 @@
-defmodule Whistle.ProgramConnection do
-  alias Whistle.{ProgramInstance}
+defmodule Whistle.Program.Connection do
+  alias Whistle.Program.Instance
 
   defstruct router: nil, name: nil, lazy_trees: %{}, vdom: {0, nil}, handlers: %{}, session: %{}
 
@@ -22,7 +22,7 @@ defmodule Whistle.ProgramConnection do
   def update(program = %{router: router, name: name, session: session}, {handler, args}) do
     with {:ok, message} <- handler_message(program, handler, args) do
       try do
-        {:ok, new_session, reply} = ProgramInstance.update(router, name, message, session)
+        {:ok, new_session, reply} = Instance.update(router, name, message, session)
         {:ok, %{program | session: new_session}, reply}
       catch
         :exit, _value ->
@@ -45,14 +45,14 @@ defmodule Whistle.ProgramConnection do
   end
 
   def notify_connection(%{router: router, name: name, session: session}, socket) do
-    ProgramInstance.send_info(router, name, {:connected, socket, session})
+    Instance.send_info(router, name, {:connected, socket, session})
   end
 
   def notify_disconnection(%{router: router, name: name, session: session}, socket) do
-    ProgramInstance.send_info(router, name, {:disconnected, socket, session})
+    Instance.send_info(router, name, {:disconnected, socket, session})
   end
 
   def view(%{router: router, name: name, session: session}) do
-    ProgramInstance.view(router, name, session)
+    Instance.view(router, name, session)
   end
 end

@@ -4,7 +4,7 @@ defmodule ProgramTest do
   use Plug.Test
 
   require Whistle.Html
-  alias Whistle.{Program, Html, ProgramInstance, ProgramRegistry}
+  alias Whistle.{Program, Html}
 
   defmodule ExampleProgram do
     use Whistle.Program
@@ -76,11 +76,11 @@ defmodule ProgramTest do
   test "programs" do
     start_supervised(@router)
 
-    assert {:ok, pid} = ProgramRegistry.ensure_started(@router, @program_name, @program, %{})
+    assert {:ok, pid} = Program.Registry.ensure_started(@router, @program_name, @program, %{})
 
-    assert pid == ProgramRegistry.pid(@router, @program_name)
+    assert pid == Program.Registry.pid(@router, @program_name)
 
-    assert ProgramInstance.view(@router, @program_name, %{}) ==
+    assert Program.Instance.view(@router, @program_name, %{}) ==
              {0,
               Html.div([], [
                 Html.button([on: [click: {:change, 1}]], "+"),
@@ -90,11 +90,11 @@ defmodule ProgramTest do
 
     socket = %Whistle.Socket{}
 
-    assert ProgramInstance.authorize(@router, @program_name, socket, %{}) == {:ok, socket, nil}
-    assert ProgramInstance.update(@router, @program_name, {:change, 2}, %{}) == {:ok, %{}, []}
-    assert ProgramInstance.send_info(@router, @program_name, :message) == :ok
+    assert Program.Instance.authorize(@router, @program_name, socket, %{}) == {:ok, socket, nil}
+    assert Program.Instance.update(@router, @program_name, {:change, 2}, %{}) == {:ok, %{}, []}
+    assert Program.Instance.send_info(@router, @program_name, :message) == :ok
 
-    assert ProgramInstance.view(@router, @program_name, %{}) ==
+    assert Program.Instance.view(@router, @program_name, %{}) ==
              {0,
               Html.div([], [
                 Html.button([on: [click: {:change, 1}]], "+"),
@@ -107,7 +107,7 @@ defmodule ProgramTest do
     start_supervised(@router)
 
     assert Program.embed(%Plug.Conn{}, @router, @program_name) =~ "The current number is: 0"
-    assert ProgramInstance.update(@router, @program_name, {:change, 2}, %{}) == {:ok, %{}, []}
+    assert Program.Instance.update(@router, @program_name, {:change, 2}, %{}) == {:ok, %{}, []}
     assert Program.embed(%Plug.Conn{}, @router, @program_name) =~ "The current number is: 2"
   end
 
