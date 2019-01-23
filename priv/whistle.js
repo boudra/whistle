@@ -1,8 +1,8 @@
 (function(exports) {
   var sockets = {};
 
-  exports.log = console.log;
-  // exports.log = function() {};
+  // exports.log = console.log;
+  exports.log = function() {};
 
   exports.open = function(url) {
     if(sockets[url]) {
@@ -112,8 +112,6 @@
     }
 
     this.handleMessage = function(data) {
-      console.log("msg", data);
-
       if(data.type == "render") {
         var patches = data.dom_patches;
 
