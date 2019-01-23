@@ -385,10 +385,6 @@ defmodule Whistle.Html.Dom do
     []
   end
 
-  def decode_attributes([{key = "data-whistle-navigation", value} | rest]) do
-    [{String.to_existing_atom(key), value} | decode_attributes(rest)]
-  end
-
   def decode_attributes([{"data-" <> _, _value} | rest]) do
     decode_attributes(rest)
   end
@@ -398,7 +394,13 @@ defmodule Whistle.Html.Dom do
   end
 
   def decode_attributes([{key, value} | rest]) do
-    [{String.to_existing_atom(key), value} | decode_attributes(rest)]
+    try do
+      atom_key = String.to_existing_atom(key)
+
+      [{atom_key, value} | decode_attributes(rest)]
+    rescue
+      ArgumentError -> decode_attributes(rest)
+    end
   end
 
   def decode_node(nil) do
@@ -419,6 +421,7 @@ defmodule Whistle.Html.Dom do
 
   def decode_node([tag, attributes, children]) do
     children = Enum.map(children, &decode_node/1)
+
     decoded_attributes =
       attributes
       |> Enum.to_list()

@@ -112,6 +112,8 @@
     }
 
     this.handleMessage = function(data) {
+      console.log("msg", data);
+
       if(data.type == "render") {
         var patches = data.dom_patches;
 
@@ -361,10 +363,16 @@
       }
 
       var attributes = Array.prototype.reduce.call(node.attributes, function(acc, e) {
+        if(e.name.indexOf("_") == 0) {
+          return acc;
+        }
+
         var value = e.value;
+
         if(value === "true") {
           value = true;
         }
+
         acc[e.name] = value;
 
         return acc;
