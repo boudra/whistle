@@ -63,14 +63,23 @@ defmodule Whistle.Html do
     children
   end
 
-  def build_node(tag, attributes, text) when is_binary(text) do
-    build_node(tag, attributes, [text])
+  def build_node(tag, attributes, node) when not is_list(node) do
+    build_node(tag, attributes, [node])
   end
 
   def build_node(tag, attributes, children) do
-    children = build_children(children)
+    new_children =
+      if Macro.quoted_literal?(children) do
+        build_children(children)
+      else
+        quote do
+          unquote(children)
+          |> List.flatten()
+          |> Whistle.Html.build_children()
+        end
+      end
 
-    {tag, {attributes, children}}
+    {tag, {attributes, new_children}}
   end
 
   defmacro node(tag, attributes, children) do

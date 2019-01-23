@@ -28,4 +28,17 @@ defmodule HtmlTest do
                Html.span()
              ])
   end
+
+  test "html macros flatten and assign keys to children" do
+    todos = ["first", "second"]
+
+    expected =
+      {"div", {[], [{0, {"p", {[], [{0, "first"}]}}}, {1, {"p", {[], [{0, "second"}]}}}]}}
+
+    assert expected == ~H"""
+           <div>{{ todos |> Enum.map(fn title -> Html.p([], title) end) }}</div>
+           """
+
+    assert expected == Html.div([], todos |> Enum.map(fn title -> Html.p([], title) end))
+  end
 end

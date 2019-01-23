@@ -37,6 +37,10 @@ defmodule Whistle.Html.Parser do
     end
   end
 
+  defp content_expr(expr) do
+    expr
+  end
+
   expr =
     ignore(string("{{"))
     |> repeat(lookahead_not(string("}}")) |> utf8_char([]))
@@ -128,7 +132,7 @@ defmodule Whistle.Html.Parser do
       choice([
         tag,
         comment,
-        expr |> map(:html_text),
+        expr |> map(:content_expr),
         text
       ])
     )
