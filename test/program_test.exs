@@ -25,7 +25,7 @@ defmodule ProgramTest do
       ~H"""
       <div>
         <button on-click={{ {:change, 1} }}>+</button>
-        <span>The current number is: {{ state }}</span>
+        <span>The current number is: {{ to_string(state) }}</span>
         <button on-click={{ {:change, -1} }}>-</button>
       </div>
       """

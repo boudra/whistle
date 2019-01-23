@@ -180,7 +180,7 @@ defmodule Whistle.Html.Parser do
               params
             )
           else
-            Html.build_node(tag, attributes, List.flatten(children))
+            Html.build_quoted_node(tag, attributes, children)
           end
 
         {[acc], context}

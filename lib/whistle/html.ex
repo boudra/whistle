@@ -42,10 +42,27 @@ defmodule Whistle.Html do
     tag_name = Atom.to_string(tag)
 
     defmacro unquote(tag)(attributes \\ [], children \\ []) do
-      build_node(unquote(tag_name), attributes, children)
+      build_quoted_node(unquote(tag_name), attributes, children)
     end
   end
 
+  defmacro node(tag, attributes, children) do
+    build_quoted_node(tag, attributes, children)
+  end
+
+  def text(content) do
+    to_string(content)
+  end
+
+  def lazy(fun, args) do
+    {:lazy, {fun, args}}
+  end
+
+  def program(name, params) do
+    {:program, {name, params}}
+  end
+
+  @doc false
   def build_children(children) when is_list(children) do
     children
     |> List.flatten()
@@ -63,11 +80,12 @@ defmodule Whistle.Html do
     children
   end
 
-  def build_node(tag, attributes, node) when not is_list(node) do
-    build_node(tag, attributes, [node])
+  @doc false
+  def build_quoted_node(tag, attributes, node) when not is_list(node) do
+    build_quoted_node(tag, attributes, [node])
   end
 
-  def build_node(tag, attributes, children) do
+  def build_quoted_node(tag, attributes, children) do
     new_children =
       if Macro.quoted_literal?(children) do
         build_children(children)
@@ -82,19 +100,12 @@ defmodule Whistle.Html do
     {tag, {attributes, new_children}}
   end
 
-  defmacro node(tag, attributes, children) do
-    build_node(tag, attributes, children)
+  @doc false
+  def build_node(tag, attributes, node) when not is_list(node) do
+    build_node(tag, attributes, [node])
   end
 
-  def text(content) do
-    to_string(content)
-  end
-
-  def lazy(fun, args) do
-    {:lazy, {fun, args}}
-  end
-
-  def program(name, params) do
-    {:program, {name, params}}
+  def build_node(tag, attributes, children) do
+    {tag, {attributes, build_children(children)}}
   end
 end

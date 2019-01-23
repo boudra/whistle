@@ -11,9 +11,8 @@ defmodule HtmlTest do
 
     assert ~H"" == nil
     assert ~H"some text" == Html.text("some text")
-    assert ~H"{{ number }}" == Html.text(number)
-    assert ~H"{{ number }}" == Html.text(number)
-    assert ~H|<div>{{ number }}</div>| == Html.div([], ["#{number}"])
+    assert ~H"{{ to_string(number) }}" == Html.text(number)
+    assert ~H|<div>{{ to_string(number) }}</div>| == Html.div([], ["#{number}"])
     assert ~H({{ "text" }}) == Html.text("text")
     assert ~H({{ "}\}" }}) == Html.text("}}")
     assert ~H(<!-- test -->) == nil

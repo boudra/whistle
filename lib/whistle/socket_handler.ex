@@ -68,6 +68,9 @@ defmodule Whistle.SocketHandler do
                  Map.merge(program_params, params)
                ),
              :ok <- ProgramRegistry.subscribe(router, program_name, self()) do
+          IO.inspect({"raw", dom})
+          IO.inspect({"decoded", Whistle.Html.Dom.decode_node(dom)})
+
           program_connection = %ProgramConnection{
             router: router,
             name: program_name,

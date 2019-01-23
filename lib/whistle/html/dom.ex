@@ -412,7 +412,7 @@ defmodule Whistle.Html.Dom do
   end
 
   def decode_node(["program", program, params]) do
-    {:program, program, params}
+    Whistle.Html.program(program, params)
   end
 
   def decode_node(["script", attributes, [""]]) do
@@ -448,10 +448,6 @@ defmodule Whistle.Html.Dom do
     |> Enum.join(" ")
   end
 
-  def node_to_string({_, text}) when is_binary(text) do
-    to_string(text)
-  end
-
   def node_to_string({_key, {tag, {attributes, children}}}) do
     children =
       children
@@ -464,6 +460,11 @@ defmodule Whistle.Html.Dom do
       ~s(<#{tag} #{attributes_to_string(attributes)}>#{children}</#{tag}>)
     end
   end
+
+  def node_to_string({_, text}) do
+    to_string(text)
+  end
+
 
   defp zip([lh | lt], [rh | rt]) do
     [{lh, rh} | zip(lt, rt)]
