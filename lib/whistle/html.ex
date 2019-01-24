@@ -1,6 +1,8 @@
 defmodule Whistle.Html do
   @tags [
     :div,
+    :meta,
+    :title,
     :img,
     :a,
     :i,
