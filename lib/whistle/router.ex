@@ -29,13 +29,33 @@ defmodule Whistle.Router do
   Returns the full URL of the Websocket Handler.
   """
   def url(%Plug.Conn{} = conn, router) do
+    scheme = scheme(conn)
+    port = port(conn)
+
     IO.iodata_to_binary([
-      http_to_ws_scheme(conn.scheme),
+      http_to_ws_scheme(scheme),
       "://",
       conn.host,
-      request_url_port(conn.scheme, conn.port),
+      request_url_port(scheme, port),
       router.__path()
     ])
+  end
+
+  defp scheme(conn) do
+    case Plug.Conn.get_req_header(conn, "x-forwarded-proto") do
+      ["https"] -> :https
+      ["http"] -> :http
+      _ -> conn.scheme
+    end
+  end
+
+  defp port(conn) do
+    with [port] <- Plug.Conn.get_req_header(conn, "x-forwarded-port"),
+         {port, ""} <- Integer.parse(port) do
+      port
+    else
+      _ -> conn.port
+    end
   end
 
   defp http_to_ws_scheme(:http), do: "ws"
