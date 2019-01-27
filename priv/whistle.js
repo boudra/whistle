@@ -1,8 +1,8 @@
 (function(exports) {
   var sockets = {};
 
-  exports.log = console.log;
-  // exports.log = function() {};
+  // exports.log = console.log;
+  exports.log = function() {};
 
   exports.open = function(url) {
     if(sockets[url]) {
@@ -295,7 +295,6 @@
         uri: uri
       });
 
-
       var joinResponseHandler = this.socket.on("message", function (data) {
         // TODO: check join error
         if(data.requestId == requestId) {
@@ -411,10 +410,61 @@
       });
     }
 
+    this.callHook = function(selector, funs, type, target) {
+      if(typeof target.querySelector == "function") {
+        var node = target.querySelector(selector);
+
+        if(node && funs[type]) {
+          funs[type](node);
+        }
+      }
+    }
+
+    this.callHooks = function(type, target) {
+      for(var name in this.hooks) {
+        this.callHook(name, this.hooks[name], type, target);
+      }
+    }
+
     this.addHook = function(name, funs) {
       this.hooks[name] = funs;
       this.callHook(name, funs, "creatingElement", this.rootElement);
     }
+
+    var popStateHandler = function(e) {
+      e.preventDefault();
+      self.socket.send({
+        type: "route",
+        program: self.id,
+        uri: e.state.uri
+      });
+    };
+
+    this.addHook("html", {
+      creatingElement: function(node) {
+        node.ownerDocument.defaultView.addEventListener("popstate", popStateHandler);
+      },
+      removingElement: function(node) {
+        node.ownerDocument.defaultView.removeEventListener("popstate", popStateHandler);
+      }
+    });
+
+    this.addHook("[data-whistle-href]", {
+      creatingElement: function(node) {
+        node.addEventListener("click", function(e) {
+          if(self.state == 2) {
+            var uri = e.currentTarget.getAttribute("href");
+            e.preventDefault();
+            self.socket.send({
+              type: "route",
+              program: self.id,
+              uri: uri
+            });
+            window.history.pushState({uri: uri}, "", uri);
+          }
+        });
+      }
+    });
 
     this.unmountPrograms = function(target) {
       if(!target.querySelectorAll) {
@@ -432,22 +482,6 @@
           }
         });
       });
-    }
-
-    this.callHook = function(name, funs, type, target) {
-      if(typeof target.querySelector == "function") {
-        var node = target.querySelector("#" + name);
-
-        if(node && funs[type]) {
-          funs[type](node);
-        }
-      }
-    }
-
-    this.callHooks = function(type, target) {
-      for(var name in this.hooks) {
-        this.callHook(name, this.hooks[name], type, target);
-      }
     }
 
   };
