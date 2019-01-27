@@ -4,6 +4,7 @@ defmodule Whistle.Program.Instance do
   alias Whistle.Program
 
   @registry Whistle.Config.registry()
+  @reload Mix.env() == :dev
 
   defstruct router: nil, name: nil, program: nil, params: nil, state: %{}
 
@@ -50,7 +51,9 @@ defmodule Whistle.Program.Instance do
         _from,
         instance = %{router: router, name: name, program: program, state: state}
       ) do
-    # IEx.Helpers.r(program)
+    if @reload do
+      IEx.Helpers.r(program)
+    end
 
     case program.update(message, state, session) do
       {:reply, new_state, new_session, reply} ->
@@ -67,8 +70,34 @@ defmodule Whistle.Program.Instance do
     end
   end
 
+  def handle_call(
+        {:route, session, path, query_params},
+        {from, _},
+        instance = %{name: name, program: program, state: state}
+      ) do
+    if function_exported?(program, :route, 4) do
+      if @reload do
+        IEx.Helpers.r(program)
+      end
+
+      case program.route(path, state, session, query_params) do
+        {:ok, new_session} ->
+          send(from, {:updated, name})
+
+          {:reply, {:ok, new_session}, instance}
+
+        error = {:error, _} ->
+          {:reply, error, instance}
+      end
+    else
+      {:reply, {:ok, session}, instance}
+    end
+  end
+
   def handle_call({:view, session}, _from, instance = %{program: program, state: state}) do
-    # IEx.Helpers.r(program)
+    if @reload do
+      IEx.Helpers.r(program)
+    end
 
     {:reply, {0, program.view(state, session)}, instance}
   end
@@ -124,6 +153,10 @@ defmodule Whistle.Program.Instance do
 
   def view(router, name, session) do
     GenServer.call(via(router, name), {:view, session})
+  end
+
+  def route(router, name, session, path, query_params) do
+    GenServer.call(via(router, name), {:route, session, path, query_params})
   end
 
   def send_info(router, name, message) do

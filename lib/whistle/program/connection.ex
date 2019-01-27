@@ -19,6 +19,26 @@ defmodule Whistle.Program.Connection do
     end
   end
 
+  def route(program = %{router: router, name: name, session: session}, uri) do
+    %{query: query, path: path} = URI.parse(uri)
+    path_info = String.split(path, "/", trim: true)
+
+    query_params =
+      if is_nil(query) do
+        %{}
+      else
+        URI.decode_query(query)
+      end
+
+    case Instance.route(router, name, session, path_info, query_params) do
+      {:ok, new_session} ->
+        {:ok, %{program | session: new_session}}
+
+      error = {:error, _} ->
+        error
+    end
+  end
+
   def update(program = %{router: router, name: name, session: session}, {handler, args}) do
     with {:ok, message} <- handler_message(program, handler, args) do
       try do

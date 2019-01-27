@@ -39,6 +39,17 @@ defmodule Whistle.SocketHandler do
 
         websocket_info(message, state)
 
+      {:ok, %{"type" => "route", "program" => program_id, "uri" => uri}} ->
+        program = Map.get(programs, program_id)
+
+        case Program.Connection.route(program, uri) do
+          {:ok, new_program} ->
+            {:ok, %{state | programs: Map.put(programs, program_id, new_program)}}
+
+          {:error, _error} ->
+            {:ok, state}
+        end
+
       {:ok, %{"type" => "leave", "program" => program_id}} ->
         program = Map.get(programs, program_id)
 
@@ -53,7 +64,8 @@ defmodule Whistle.SocketHandler do
          "requestId" => request_id,
          "program" => program_name,
          "params" => params,
-         "dom" => dom
+         "dom" => dom,
+         "uri" => uri
        }} ->
         channel_path = String.split(program_name, ":")
 
@@ -87,14 +99,20 @@ defmodule Whistle.SocketHandler do
 
           Program.Connection.notify_connection(program_connection, socket)
 
-          # trigger an initial render
-          send(self(), {:updated, program_name})
+          new_program =
+            case Program.Connection.route(program_connection, uri) do
+              {:ok, new_program} ->
+                new_program
+
+              {:error, _error} ->
+                program
+            end
 
           {:reply, {:text, response},
            %{
              state
              | socket: new_socket,
-               programs: Map.put(programs, program_id, program_connection)
+               programs: Map.put(programs, program_id, new_program)
            }}
         end
     end

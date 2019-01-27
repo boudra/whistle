@@ -1,8 +1,8 @@
 (function(exports) {
   var sockets = {};
 
-  // exports.log = console.log;
-  exports.log = function() {};
+  exports.log = console.log;
+  // exports.log = function() {};
 
   exports.open = function(url) {
     if(sockets[url]) {
@@ -277,6 +277,7 @@
 
       var initialDom = null;
       var requestId = this.name + "-" + (Math.random().toString(36).substr(2, 5));
+      var uri = window.location.pathname + window.location.search;
 
       // If we're in fullscreen mode, get the root element's DOM
       if(!this.rootElement.ownerDocument) {
@@ -290,7 +291,8 @@
         requestId: requestId,
         program: this.name,
         params: this.params,
-        dom: initialDom
+        dom: initialDom,
+        uri: uri
       });
 
 
