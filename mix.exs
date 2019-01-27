@@ -4,7 +4,7 @@ defmodule Whistle.MixProject do
   def project do
     [
       app: :whistle,
-      version: "0.1.1",
+      version: "0.1.2",
       elixir: "~> 1.7",
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
