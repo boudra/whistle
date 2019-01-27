@@ -23,8 +23,7 @@ What has been done, and what features are planned:
 - [x] Lazy Virtual DOM trees to reduce unecessary rendering and diffing
 - [x] Integrate Virtual DOM with Elixir's AST so it can be generated at compile-time
 - [x] Initial render via HTTP, then stream updates via WebSockets
-- [x] Full screen program mode with browser history to build Single Page Applications with Server Side Rendering :rocket:
-- [x] Embed programs inside of other programs (like React components)
+- [x] Full screen program mode with routing and browser history to build Single Page Applications with Server Side Rendering :rocket:
 - [x] HTML string template file to VDOM tree in the view
 - [x] "Single Page Applications" with built in routing and browser history support
 - [x] Code reloading for code Programs without having to restart
