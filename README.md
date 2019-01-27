@@ -14,7 +14,7 @@ For an example Single Page Application including Server Side Rendering and routi
 
 ## Roadmap
 
-**Please remember that this project is still in it's very early stages, some things might not work and the interface will definetly change**
+**Please remember that this project is still in it's very early stages, test coverage is low, some things might not work and the API will most definetly change**
 
 What has been done, and what features are planned:
 
