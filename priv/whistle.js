@@ -51,7 +51,7 @@
   }
 
   function setAttribute(node, key, value) {
-    if(key == "value") {
+    if(key == "value" && (node.ownerDocument.activeElement !== node || value == "")) {
       node.value = value;
     } else if (key == "checked") {
       node.checked = value;
