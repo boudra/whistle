@@ -1,6 +1,15 @@
 (function(exports) {
   var sockets = {};
 
+  exports.sockets = function() {
+    var returnSockets = [];
+    for(var k in sockets) {
+      returnSockets.push(sockets[k]);
+    }
+
+    return returnSockets;
+  }
+
   // exports.log = console.log;
   exports.log = function() {};
 
@@ -418,12 +427,20 @@
     }
 
     this.callHook = function(selector, funs, type, target) {
-      if(typeof target.querySelector == "function") {
-        var node = target.querySelector(selector);
+      if(!funs[type]) {
+        return;
+      }
 
-        if(node && funs[type]) {
-          funs[type](node);
-        }
+      var search = target.parentNode || target;
+
+      if(typeof search.querySelector == "function") {
+        var nodes = search.querySelectorAll(selector);
+
+        nodes.forEach(function(node) {
+          if(node === target || target.contains(node)) {
+            funs[type](node);
+          }
+        });
       }
     }
 
