@@ -13,6 +13,8 @@ config :my_app, MyAppWeb.ProgramRouter,
 
 Now let's define the main Plug that is going to serve normal HTTP requests before we make any WebSocket connections, here you can run any plugs you might need. In this case, we are just serving the Javascript file with `Plug.Static` and rendering our counter program.
 
+The Plug will automatically call and render your program.
+
 ```elixir
 # lib/my_app_web/plug.ex
 
