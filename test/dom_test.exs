@@ -60,6 +60,10 @@ defmodule DomTest do
     assert diff_patches(Html.p([id: "id"], [Html.text("")]), Html.p([id: "id"], [])) == [
              [@remove_node, [0, 0]]
            ]
+
+    assert diff_patches(Html.div([], [Html.p([], "test")]), Html.div([], ["text"])) == [
+             [@replace_node, [0, 0], "text"]
+           ]
   end
 
   describe "lazy dom" do
@@ -119,14 +123,20 @@ defmodule DomTest do
   end
 
   test "encode node" do
-    assert Dom.encode_node(%{}, [], {0, Html.div([class: "test"], [
-      Html.p([], "test")
-    ])}) == ["div", %{"class" => "test"}, [["p", %{}, ["test"]]]]
+    assert Dom.encode_node(
+             %{},
+             [],
+             {0,
+              Html.div([class: "test"], [
+                Html.p([], "test")
+              ])}
+           ) == ["div", %{"class" => "test"}, [["p", %{}, ["test"]]]]
   end
 
   test "decode node" do
-    assert Dom.decode_node(["div", %{"class" => "test"}, [["p", %{}, ["test"]]]]) == Html.div([class: "test"], [
-      Html.p([], "test")
-    ])
+    assert Dom.decode_node(["div", %{"class" => "test"}, [["p", %{}, ["test"]]]]) ==
+             Html.div([class: "test"], [
+               Html.p([], "test")
+             ])
   end
 end

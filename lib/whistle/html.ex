@@ -1,6 +1,7 @@
 defmodule Whistle.Html do
   @tags [
     :div,
+    :meta,
     :img,
     :a,
     :i,
@@ -48,6 +49,18 @@ defmodule Whistle.Html do
 
   defmacro node(tag, attributes, children) do
     build_quoted_node(tag, attributes, children)
+  end
+
+  defmacro ahref(route, attributes, children) do
+    attributes = quote do
+      unquote(attributes) ++ [href: unquote(route), "data-whistle-href": true]
+    end
+
+    build_quoted_node("a", attributes, children)
+  end
+
+  defmacro title(children) do
+    build_quoted_node("title", [], children)
   end
 
   def text(content) do

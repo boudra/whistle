@@ -1,6 +1,15 @@
 (function(exports) {
   var sockets = {};
 
+  exports.sockets = function() {
+    var returnSockets = [];
+    for(var k in sockets) {
+      returnSockets.push(sockets[k]);
+    }
+
+    return returnSockets;
+  }
+
   // exports.log = console.log;
   exports.log = function() {};
 
@@ -156,6 +165,13 @@
               }
               break;
 
+            case 6:
+              {
+                var replaceTarget = findNodeByPath(self.rootElement, patch[1]);
+                replaceTarget.removeAttribute(patch[2]);
+              }
+              break;
+
             case 7:
               {
                 var node = findNodeByPath(self.rootElement, patch[1]);
@@ -277,6 +293,7 @@
 
       var initialDom = null;
       var requestId = this.name + "-" + (Math.random().toString(36).substr(2, 5));
+      var uri = window.location.pathname + window.location.search;
 
       // If we're in fullscreen mode, get the root element's DOM
       if(!this.rootElement.ownerDocument) {
@@ -290,9 +307,9 @@
         requestId: requestId,
         program: this.name,
         params: this.params,
-        dom: initialDom
+        dom: initialDom,
+        uri: uri
       });
-
 
       var joinResponseHandler = this.socket.on("message", function (data) {
         // TODO: check join error
@@ -409,10 +426,69 @@
       });
     }
 
+    this.callHook = function(selector, funs, type, target) {
+      if(!funs[type]) {
+        return;
+      }
+
+      var search = target.parentNode || target;
+
+      if(typeof search.querySelector == "function") {
+        var nodes = search.querySelectorAll(selector);
+
+        nodes.forEach(function(node) {
+          if(node === target || target.contains(node)) {
+            funs[type](node);
+          }
+        });
+      }
+    }
+
+    this.callHooks = function(type, target) {
+      for(var name in this.hooks) {
+        this.callHook(name, this.hooks[name], type, target);
+      }
+    }
+
     this.addHook = function(name, funs) {
       this.hooks[name] = funs;
       this.callHook(name, funs, "creatingElement", this.rootElement);
     }
+
+    var popStateHandler = function(e) {
+      e.preventDefault();
+      self.socket.send({
+        type: "route",
+        program: self.id,
+        uri: e.state.uri
+      });
+    };
+
+    this.addHook("html", {
+      creatingElement: function(node) {
+        node.ownerDocument.defaultView.addEventListener("popstate", popStateHandler);
+      },
+      removingElement: function(node) {
+        node.ownerDocument.defaultView.removeEventListener("popstate", popStateHandler);
+      }
+    });
+
+    this.addHook("[data-whistle-href]", {
+      creatingElement: function(node) {
+        node.addEventListener("click", function(e) {
+          if(self.state == 2) {
+            var uri = e.currentTarget.getAttribute("href");
+            e.preventDefault();
+            self.socket.send({
+              type: "route",
+              program: self.id,
+              uri: uri
+            });
+            window.history.pushState({uri: uri}, "", uri);
+          }
+        });
+      }
+    });
 
     this.unmountPrograms = function(target) {
       if(!target.querySelectorAll) {
@@ -430,22 +506,6 @@
           }
         });
       });
-    }
-
-    this.callHook = function(name, funs, type, target) {
-      if(typeof target.querySelector == "function") {
-        var node = target.querySelector("#" + name);
-
-        if(node && funs[type]) {
-          funs[type](node);
-        }
-      }
-    }
-
-    this.callHooks = function(type, target) {
-      for(var name in this.hooks) {
-        this.callHook(name, this.hooks[name], type, target);
-      }
     }
 
   };

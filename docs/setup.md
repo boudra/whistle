@@ -49,12 +49,10 @@ defmodule MyAppWeb.Plug do
     only: ~w(css js favicon.ico robots.txt)
   )
 
-  plug(:index)
-
-  def index(conn, _opts) do
-    conn
-    |> Whistle.Program.fullscreen(MyAppWeb.ProgramRouter, "counter")
-  end
+  plug(Whistle.Program.Plug,
+    router: MyAppWeb.ProgramRouter,
+    program: "counter"
+  )
 end
 ```
 
@@ -64,6 +62,25 @@ Don't forget to copy the Javascript library:
 $ mix deps.get
 $ mkdir -p priv/static/js
 $ cp deps/whistle/priv/whistle.js priv/static/js/
+```
+
+And change your view to return a root HTML element:
+
+```elixir
+def view(state, _session) do
+  ~H"""
+  <html>
+    <head></head>
+    <body>
+      <div>
+        <button on-click={{ :increment }}>+</button>
+        <span>The current number is: {{ state }}></span>
+        <button on-click={{ :decrement }}>-</button>
+      </div>
+    </body>
+  </html>
+  """
+end
 ```
 
 Run your application:

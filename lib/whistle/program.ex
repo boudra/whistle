@@ -2,6 +2,8 @@ defmodule Whistle.Program do
   alias Whistle.Socket
   require Whistle.Html
 
+  alias Whistle.Program.Instance
+
   @json_library Application.get_env(:whistle, :json_library, Jason)
 
   defmacro __using__(_opts) do
@@ -38,6 +40,9 @@ defmodule Whistle.Program do
   ```
   """
   @callback init(map()) :: {:ok, Whistle.state()} | {:error, any()}
+
+  @callback route(list(String.t()), Whistle.state(), Whistle.Session.t(), map()) ::
+              {:ok, Whistle.state()} | {:error, any()}
 
   @doc """
   The terminate callback will be called when the program instance shuts down, it will receive the state.
@@ -126,10 +131,10 @@ defmodule Whistle.Program do
   It must return a Dom tree, which looks like this:
 
   ```
-  # {key, {tag, attributes, children}}
-  {0, {"div", [class: "red"], [
-  {0, {"p", [], ["some text"]}
-  ]}}
+  # {key, {tag, {attributes, children}}}
+  {0, {"div", {[class: "red"], [
+  {0, {"p", {[], ["some text"]}}
+  ]}}}
   ```
 
   You can use the `Whistle.Html` helpers to generate this tree:
@@ -155,29 +160,36 @@ defmodule Whistle.Program do
   Both the HTML helpers and the sigil will expand to a DOM tree at compile time.
   """
   @callback view(Whistle.state(), Whistle.Session.t()) :: Whistle.Html.Dom.t()
-  @optional_callbacks [handle_info: 2, authorize: 3, terminate: 1]
+  @optional_callbacks [handle_info: 2, authorize: 3, terminate: 1, route: 4]
 
-  defp render(conn, router, program_name, params) do
+  defp authorize(conn, router, program_name, params) do
     channel_path = String.split(program_name, ":")
 
     socket = Whistle.Socket.new(conn)
 
     with {:ok, program, program_params} <- router.__match(channel_path),
          {:ok, _} <-
-           Whistle.Program.Registry.ensure_started(router, program_name, program, program_params),
-         {:ok, _, session} <-
-           Whistle.Program.Instance.authorize(
-             router,
-             program_name,
-             socket,
-             Map.merge(program_params, params)
-           ) do
-      Whistle.Program.Instance.view(router, program_name, session)
+           Whistle.Program.Registry.ensure_started(router, program_name, program, program_params) do
+      Whistle.Program.Instance.authorize(
+        router,
+        program_name,
+        socket,
+        Map.merge(program_params, params)
+      )
+    end
+  end
+
+  defp render(conn, router, program_name, params) do
+    case authorize(conn, router, program_name, params) do
+      {:ok, _new_socket, new_session} ->
+        Whistle.Program.Instance.view(router, program_name, new_session)
     end
   end
 
   @doc """
-  A fullscreen `Whistle.Program` renders the whole HTML document, this is useful if you want to also handle navigation in your program. When the Javscript library executes, it will automatically connect to the Program and become interactive.
+  A fullscreen `Whistle.Program` renders the whole HTML document, this is useful if you want to also handle navigation in your program through the `Whistle.Program.route/4` callback.
+
+  When the Javscript library executes, it will automatically connect to the Program and become interactive, giving you both a static HTTP page and an interactive web page for free.
 
   Remember to include the Javascript library via a `<script>` tag or module import.
 
@@ -189,10 +201,22 @@ defmodule Whistle.Program do
   end
   ```
 
-  Example of a view:
+  Example of a program:
 
   ```
+  def route(["user", user_id], _state, session, _query_params) do
+    {:ok, %{session | route: {:user, user_id}}}
+  end
+
+  def view(state, %{route: {:user, user_id}}) do
+    view_document("You're viewing user ##\{user_id}")
+  end
+
   def view(state, session) do
+    view_document("It Works!")
+  end
+
+  defp view_document(body) do
     ~H"\""
     <html>
       <head>
@@ -207,43 +231,55 @@ defmodule Whistle.Program do
   end
   ```
   """
-  def fullscreen(conn, router, program_name, params \\ %{}) do
+  def fullscreen(
+        conn = %{query_params: query_params, path_info: path},
+        router,
+        program_name,
+        params \\ %{}
+      ) do
     encoded_params =
       params
       |> @json_library.encode!()
       |> Plug.HTML.html_escape()
 
-    view =
+    with {:authorize, {:ok, _new_socket, new_session}} <-
+           {:authorize, authorize(conn, router, program_name, params)},
+         {:route, {:ok, routed_session}} <-
+           {:route, Instance.route(router, program_name, new_session, path, query_params)},
+         {:view, {0, {"html", {attributes, children}}}} <-
+           {:view, Instance.view(router, program_name, routed_session)} do
+      new_attributes =
+        attributes
+        |> Keyword.put(:"data-whistle-socket", Whistle.Router.url(conn, router))
+        |> Keyword.put(:"data-whistle-program", program_name)
+        |> Keyword.put(:"data-whistle-params", encoded_params)
+
+      new_children =
+        Enum.map(children, fn child ->
+          embed_programs(conn, router, child)
+        end)
+
+      view = Whistle.Html.Dom.node_to_string({0, Whistle.Html.html(new_attributes, new_children)})
+
+      resp = "<!DOCTYPE html>#{view}"
+
       conn
-      |> render(router, program_name, params)
-      |> case do
-        {0, {"html", {attributes, children}}} ->
-          new_attributes =
-            attributes
-            |> Keyword.put(:"data-whistle-socket", Whistle.Router.url(conn, router))
-            |> Keyword.put(:"data-whistle-program", program_name)
-            |> Keyword.put(:"data-whistle-params", encoded_params)
+      |> Plug.Conn.put_resp_content_type("text/html")
+      |> Plug.Conn.send_resp(200, resp)
+    else
+      {:authorize, {:error, :not_found}} ->
+        # TODO: make this configurable
+        Plug.Conn.send_resp(conn, 403, "Forbidden")
 
-          new_children =
-            Enum.map(children, fn child ->
-              embed_programs(conn, router, child)
-            end)
+      {:route, {:error, :not_found}} ->
+        # TODO: make this configurable
+        Plug.Conn.send_resp(conn, 404, "Not found")
 
-          {0, Whistle.Html.html(new_attributes, new_children)}
-
-        {0, {element, _}} ->
-          raise """
-          `Whistle.Program.fullscreen/4` expects program to return an <html> element as the root element,
-          got #{inspect(element)} instead.
-          """
-      end
-      |> Whistle.Html.Dom.node_to_string()
-
-    resp = "<!DOCTYPE html>#{view}"
-
-    conn
-    |> Plug.Conn.put_resp_content_type("text/html")
-    |> Plug.Conn.send_resp(200, resp)
+      {:view, _} ->
+        raise """
+        Fullscreen programs must return a <html> tag as it's root element.
+        """
+    end
   end
 
   @doc """

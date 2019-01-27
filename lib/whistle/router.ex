@@ -58,7 +58,7 @@ defmodule Whistle.Router do
 
     quote do
       # @behaviour Whistle.Router
-      import Whistle.Router
+      import Whistle.Router, only: [match: 3]
 
       @before_compile Whistle.Router
 

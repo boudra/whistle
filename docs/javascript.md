@@ -70,7 +70,7 @@ If you had a view like this one:
 Html.button([id: "button"], "click me!")
 ```
 
-Call `addHook()` with the ID of the element as a first argument and an object with the desired callbacks as a second argument:
+Call `addHook()` with the selector of the element as a first argument and an object with the desired callbacks as a second argument:
 
 
 ```js
@@ -78,7 +78,7 @@ const socket = Whistle.open("ws://localhost:4000/socket");
 const root = document.getElementById("target");
 const counter = socket.mount(root, "counter");
 
-counter.addHook("button", {
+counter.addHook("#button", {
   creatingElement(node) {
     node.addEventListener("click", e => {
       alert("hello world!");

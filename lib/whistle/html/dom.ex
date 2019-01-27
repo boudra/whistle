@@ -95,7 +95,7 @@ defmodule Whistle.Html.Dom do
     state
   end
 
-  def diff(state, path, {key, _}, {key, new_node}) when is_binary(new_node) do
+  def diff(state, path, {key, old_node}, {key, new_node}) when is_binary(new_node) or is_binary(old_node) do
     replace_node(state, path, key, new_node)
   end
 
