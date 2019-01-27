@@ -116,7 +116,7 @@
         var patches = data.dom_patches;
 
         patches.forEach(function(patch) {
-          exports.log(patch);
+          console.log(patch);
 
           switch(patch[0]) {
             case 2:
@@ -153,6 +153,13 @@
               {
                 var replaceTarget = findNodeByPath(self.rootElement, patch[1]);
                 setAttribute(replaceTarget, patch[2][0], patch[2][1]);
+              }
+              break;
+
+            case 6:
+              {
+                var replaceTarget = findNodeByPath(self.rootElement, patch[1]);
+                replaceTarget.removeAttribute(patch[2]);
               }
               break;
 
