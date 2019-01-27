@@ -36,8 +36,7 @@ Whistle's Virtual DOM is represented as follows:
 # {key, {tag, {attributes, children}}}
 {0, {"div", {[class: "red"], [{0, "first"}, {1, "second"}]}}}
 ```
-
-This can be achieved with:
+You can use the macros to generate it (preferrable):
 
 ```elixir
 Html.div([class: "red"], [
@@ -46,10 +45,12 @@ Html.div([class: "red"], [
 ])
 ```
 
-or
+Or the `~H` sigil (note that this is not EEx, it is a custom templating format similar to Mustache):
 
 ```elixir
+~H"""
 <div class="red">first second</div>
+"""
 ```
 
 The Virtual DOM consists of pairs of tuples so that it can also be a valid Elixir AST and be able to generate most of it at compile time:
