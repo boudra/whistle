@@ -13,7 +13,18 @@ For an example Single Page Application including Server Side Rendering and routi
 - Code: [boudra/whistle-chat](https://github.com/boudra/whistle-chat)
 - Demo: [https://lumpy-some-piglet.gigalixirapp.com/](https://lumpy-some-piglet.gigalixirapp.com/)
 
+
+**Please remember that this project is still in it's very early stages, test coverage is low, some things might not work and the API will most definetly change**
+
 ## FAQs
+
+### What problems does Whistle address?
+
+Whistle is a web framework that works a bit differently than normal MVC web frameworks. It is composed of stateful long-running components, allowing you to create interactive applications entirely in Elixir via WebSockets, while being also able to render an HTML page like any other web framework.
+
+It aims to provide a more functional approach to building web apps in Elixir, while also taking more advantage of Erlang's actor model.
+
+It also provides an extensive [Javascript API](https://hexdocs.pm/whistle/javscript.html) for when Elixir alone doesn't cut it and interop with existing front-end libraries like React is needed.
 
 ### What is a Router?
 
@@ -64,7 +75,7 @@ iex> Html.span([], [a])
 {0, {"span", {[], [{0, {:a, [], nil}}]}}}
 ```
 
-Whistle also provided functions to render a VDOM to string, this is used to render a HTML response when rendering Programs in Plug.
+Whistle also provides functions to render a VDOM to string, this is used to render a HTML response when rendering Programs in Plug.
 
 ```elixir
 iex> Html.span([], ["text"]) |> Whistle.Html.Dom.node_to_string()
@@ -73,7 +84,6 @@ iex> Html.span([], ["text"]) |> Whistle.Html.Dom.node_to_string()
 
 ## Roadmap
 
-**Please remember that this project is still in it's very early stages, test coverage is low, some things might not work and the API will most definetly change**
 
 What has been done, and what features are planned:
 
