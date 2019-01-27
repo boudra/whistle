@@ -47,7 +47,8 @@ defmodule Whistle.MixProject do
       "README.md",
       "docs/phoenix.md",
       "docs/setup.md",
-      "docs/distributed.md"
+      "docs/distributed.md",
+      "docs/javascript.md"
     ]
   end
 
