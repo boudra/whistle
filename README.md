@@ -31,6 +31,7 @@ What has been done, and what features are planned:
 - [ ] **Full EEx support for templates**
 - [ ] **Testing helpers**
 - [ ] Authentication helpers?
+- [ ] Integration with Ecto for building changeset forms
 - [ ] Rewrite front-end library in ES6+/Typescript for easier development
 - [ ] Write front-end library tests
 - [ ] DOM list patching (reordering, inserting)
