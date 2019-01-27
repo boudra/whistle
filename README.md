@@ -116,7 +116,7 @@ children = [
 ]
 ```
 
-Now that you have a router and a program, it's time to link everything up:
+Now that you have a router and a program set up, it's time to link everything up with a server, Whistle works with Plug so it doesn't need Phoenix to run, but you can integrate with an existing Phoenix project too:
 
+- [Running with Whistle and Plug](/docs/setup.md)
 - [Integrate with your existing Phoenix project](/docs/phoenix.md)
-- [Running Whislte on it's own](/docs/setup.md)
