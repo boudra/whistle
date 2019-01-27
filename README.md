@@ -12,23 +12,25 @@ Whistle allows you to write interactive dynamic web apps entirely in Elixir, it 
 
 ## Roadmap
 
-What has been done, and what is left to do:
+What has been done, and what features are planned:
 
 - [x] Program orchestrating, program error recovery, client auto-reconnections
-- [x] Distributed programs via Horde
 - [x] Program and client message communication and broadcasting
-- [x] Lazy Virtual DOM trees to optimize diffing
-- [x] Initial render via HTTP, then pickup updates via WebSockets
+- [x] Lazy Virtual DOM trees to reduce unecessary rendering and diffing
+- [x] Integrate Virtual DOM with Elixir's AST so it can be generated at compile-time
+- [x] Initial render via HTTP, then stream updates via WebSockets
 - [x] Full screen program mode with browser history to build Single Page Applications with Server Side Rendering :rocket:
 - [x] Embed programs inside of other programs (like React components)
 - [x] HTML string or EEx template file to VDOM tree in the view
-- [ ] Advanced `Navigation` module to do full featured program routing
+- [x] "Single Page Applications" with built in routing and browser history support
+- [x] Code reloading for code Programs without having to restart
 - [ ] Authentication helpers?
-- [ ] Built-in Session persistence helpers
+- [ ] Session and Virtual DOM persistence between refreshes
 - [ ] Rewrite front-end library in ES6+/Typescript for easier development
 - [ ] Write front-end library tests
 - [ ] DOM list patching (reordering, inserting)
-- [ ] Autoreloading, live code programs
+- [ ] Trigger classes depending on state like `classes: [wrapper: true, loading: :disconnected]` this will trigger loading when the socket is disconnected or `[spin: :loading]` for a form submit waiting for a response.
+- [ ] Program state as a CRDT to distribute programs?
 
 ## Installation
 
