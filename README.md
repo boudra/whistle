@@ -25,7 +25,9 @@ A program is a stateful component that runs as an Erlang process, this is where 
 
 ### What is the difference between a Fullscreen Program and an Embeded Program?
 
-A fullscreen Program is when a Program renders the whole HTML document, including the `<head>` and the `<body>`. Fullscreen programs normally take control of the routing too.
+A fullscreen Program is when a Program renders the whole HTML document, including the `<head>` and the `<body>`. Fullscreen programs normally take control of the routing too, you can make a whole web application with a Fullscreen program.
+
+Embeded programs are normally small components that can be included in your web page, like a typeahead search widget or a chat.
 
 ### How does the Virtual DOM work?
 
