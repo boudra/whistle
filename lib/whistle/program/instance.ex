@@ -4,7 +4,16 @@ defmodule Whistle.Program.Instance do
   alias Whistle.Program
 
   @registry Whistle.Config.registry()
-  @reload Mix.env() == :dev
+
+  if Whistle.Config.code_reload?() do
+    def maybe_reload() do
+      IEx.Helpers.recompile()
+    end
+  else
+    def maybe_reload() do
+      nil
+    end
+  end
 
   defstruct router: nil, name: nil, program: nil, params: nil, state: %{}
 
@@ -51,9 +60,7 @@ defmodule Whistle.Program.Instance do
         _from,
         instance = %{router: router, name: name, program: program, state: state}
       ) do
-    if @reload do
-      IEx.Helpers.r(program)
-    end
+    maybe_reload()
 
     case program.update(message, state, session) do
       {:reply, new_state, new_session, reply} ->
@@ -76,9 +83,7 @@ defmodule Whistle.Program.Instance do
         instance = %{name: name, program: program, state: state}
       ) do
     if function_exported?(program, :route, 4) do
-      if @reload do
-        IEx.Helpers.r(program)
-      end
+      maybe_reload()
 
       case program.route(path, state, session, query_params) do
         {:ok, new_session} ->
@@ -95,9 +100,7 @@ defmodule Whistle.Program.Instance do
   end
 
   def handle_call({:view, session}, _from, instance = %{program: program, state: state}) do
-    if @reload do
-      IEx.Helpers.r(program)
-    end
+    maybe_reload()
 
     {:reply, {0, program.view(state, session)}, instance}
   end
