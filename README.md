@@ -6,6 +6,7 @@
 Whistle is a web framework for building interactive dynamic web apps or small components entirely in Elixir, it manages the state of your app in the server and streams the UI to a dumb client via Websockets.
 
 - Documentation: [https://hexdocs.pm/whistle](https://hexdocs.pm/whistle)
+- [Getting started](https://hexdocs.pm/whistle/readme.html#getting-started)
 
 For an example Single Page Application including Server Side Rendering and routing, that uses most of Whistle's features, check out this chat application:
 
@@ -14,19 +15,19 @@ For an example Single Page Application including Server Side Rendering and routi
 
 ## FAQs
 
-**What is a Router?**
+### What is a Router?
 
 A Router is a module that defines what routes match what programs, every unique route string will spawn a unique program instance. The router also supervises the [Program Regsitry](https://hexdocs.pm/whistle/Whistle.Program.Registry.html), the Program Supervisor and the [HTTP server](https://hexdocs.pm/whistle/setup.html) if there is one.
 
-**What is a Program?**
+### What is a Program?
 
 A program is a stateful component that runs as an Erlang process, this is where we define how the state looks like, how it's updated and how it's rendered.
 
-**What is the difference between a Fullscreen Program and an Embeded Program?**
+### What is the difference between a Fullscreen Program and an Embeded Program?
 
 A fullscreen Program is when a Program renders the whole HTML document, including the `<head>` and the `<body>`. Fullscreen programs normally take control of the routing too.
 
-**How does the Virtual DOM work?**
+### How does the Virtual DOM work?
 
 The Virtual DOM is an in-memory representation of the client's DOM that lives in the server, every time a Program's state changes, Whistle will render it compare the new Virtual DOM against the old one, and send minimal changes to the client via WebSockets.
 
@@ -36,7 +37,7 @@ Whistle's Virtual DOM is represented as follows:
 # {key, {tag, {attributes, children}}}
 {0, {"div", {[class: "red"], [{0, "first"}, {1, "second"}]}}}
 ```
-You can use the macros to generate it (preferrable):
+You can use the macros to generate it (preferable):
 
 ```elixir
 Html.div([class: "red"], [
@@ -67,7 +68,6 @@ Whistle also provided functions to render a VDOM to string, this is used to rend
 iex> Html.span([], ["text"]) |> Whistle.Html.Dom.node_to_string()
 <span>text</span>
 ```
-
 
 ## Roadmap
 
