@@ -24,7 +24,7 @@ Whistle is a web framework that works a bit differently than normal MVC web fram
 
 It aims to provide a more functional approach to building web apps in Elixir, while also taking more advantage of Erlang's actor model.
 
-It also provides an extensive [Javascript API](https://hexdocs.pm/whistle/javscript.html) for when Elixir alone doesn't cut it and interop with existing front-end libraries like React is needed.
+It also provides an extensive [Javascript API](https://hexdocs.pm/whistle/javascript.html) for when Elixir alone doesn't cut it and interop with existing front-end libraries like React is needed.
 
 ### What is a Router?
 
