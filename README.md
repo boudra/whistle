@@ -28,9 +28,10 @@ What has been done, and what features are planned:
 - [x] HTML string template file to VDOM tree in the view
 - [x] "Single Page Applications" with built in routing and browser history support
 - [x] Code reloading for code Programs without having to restart
-- [ ] Authentication helpers?
 - [ ] **Session and Virtual DOM persistence between refreshes, to avoid sending the DOM every time the Websocket connects**
 - [ ] **Full EEx support for templates**
+- [ ] **Testing helpers**
+- [ ] Authentication helpers?
 - [ ] Rewrite front-end library in ES6+/Typescript for easier development
 - [ ] Write front-end library tests
 - [ ] DOM list patching (reordering, inserting)
