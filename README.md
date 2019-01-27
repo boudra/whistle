@@ -97,57 +97,6 @@ defmodule MyAppWeb.ExampleProgram do
 end
 ```
 
-Programs can also be nested:
-
-```elixir
-defmodule MyAppWeb.ProgramRouter do
-  use Whistle.Router, "/ws"
-
-  match("main", MyAppWeb.MainProgram, %{})
-  match("counter", MyAppWeb.ExampleProgram, %{})
-end
-
-defmodule MyAppWeb.MainProgram do
-  use Whistle.Program
-
-  def init(_params) do
-    {:ok, %{}}
-  end
-
-  def authorize(_state, socket, _params) do
-    {:ok, socket, %{path: "/"}}
-  end
-
-  def update({:navigate, path}, state, session) do
-    {:ok, state, %{session | path: path}}
-  end
-
-  def view(state, %{path: "/"}) do
-    ~H"""
-    <div>
-      <h1>Homepage</h1>
-      <a on-click={{ {:navigate, "/counter"} }}>
-        Go to the counter
-      </a>
-    </div>
-    """
-  end
-
-  def view(state, %{path: "/counter"}) do
-    ~H"""
-    <div>
-      <h1>Counter</h1>
-      <a on-click={{ {:navigate, "/"} }}>
-        Back to the homepage
-      </a>
-      <program name="counter" params={{ %{} }}> />
-    </div>
-    """
-  end
-end
-
-```
-
 Check out the docs for `Whistle.Program` to see all the callbacks available and the different ways to render the view.
 
 All you need to do now is add the router in your supervision tree, a router will spawn a dynamic Supervisor and Registry to keep track of all the program instances, you can run as many different routers as you want:
