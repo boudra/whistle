@@ -2,11 +2,20 @@ defmodule Whistle.Router do
   @registry Application.get_env(:whistle, :program_registry, Elixir.Registry)
   @supervisor Application.get_env(:whistle, :program_supervisor, Elixir.DynamicSupervisor)
 
-  defp build_children({router, _args}) do
+  defp build_children({router, args}) do
+    http_server =
+      case args do
+        [] ->
+          []
+
+        args ->
+          [{Whistle.HttpServer, Keyword.put(args, :routers, [router])}]
+      end
+
     [
       {@registry, [keys: :unique, name: Module.concat(router, Registry)]},
-      {@supervisor, [name: Module.concat(router, Supervisor), strategy: :one_for_one]}
-    ]
+      {@supervisor, [name: Module.concat(router, Supervisor), strategy: :one_for_one]},
+    ] ++ http_server
   end
 
   def start_link(args = {router, _args}) do
@@ -29,13 +38,16 @@ defmodule Whistle.Router do
   Returns the full URL of the Websocket Handler.
   """
   def url(%Plug.Conn{} = conn, router) do
-    scheme = scheme(conn)
-    port = port(conn)
+    url_config = Keyword.get(router.__config(), :url, [])
+
+    scheme = Keyword.get(url_config, :scheme, scheme(conn))
+    port = Keyword.get(url_config, :port, port(conn))
+    host = Keyword.get(url_config, :host, conn.host)
 
     IO.iodata_to_binary([
       http_to_ws_scheme(scheme),
       "://",
-      conn.host,
+      host,
       request_url_port(scheme, port),
       router.__path()
     ])
@@ -82,12 +94,16 @@ defmodule Whistle.Router do
 
       @before_compile Whistle.Router
 
-      def child_spec(args) do
-        Whistle.Router.child_spec({__MODULE__, args})
+      def __config() do
+        Application.get_env(Application.get_application(__MODULE__), __MODULE__, [])
       end
 
-      def start_link(args) do
-        Whistle.Router.start_link({__MODULE__, args})
+      def child_spec(_args) do
+        Whistle.Router.child_spec({__MODULE__, __config()})
+      end
+
+      def start_link(_args) do
+        Whistle.Router.start_link({__MODULE__, __config()})
       end
 
       def __path() do

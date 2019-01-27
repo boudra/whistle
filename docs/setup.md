@@ -1,35 +1,14 @@
 # Setup Whistle
 
-To start a project, you need to add the `Whistle.HttpServer` child specification to your application supervisor like this:
+To start a project, you need to configure your HTTP server, the Router will start it automatically if it's configured:
 
 ```elixir
-# lib/my_app/application.ex
+# config/config.exs
 
-children = [
-  {Whistle.HttpServer, [
-    http: [port: 4000], # settings passed to Cowboy
-    plug: MyAppWeb.Plug, # Specify your own Plug to be called
-    routers: [MyAppWeb.ProgramRouter]
-  ]}
-]
-```
-
-You can always define and use a config yourself if you wish:
-
-```elixir
-# config/dev.exs
-
-config :my_app, :whistle_http, [
+config :my_app, MyAppWeb.ProgramRouter,
   http: [port: 4000],
-  plug: MyAppWeb.Plug, # Specify your Plug to be called
-  routers: [MyAppWeb.ProgramRouter]
-]
-
-# lib/my_app/application.ex
-
-children = [
-  {Whistle.HttpServer, Application.get_env(:my_app, :whistle_http)}
-]
+  url: [port: 4000, scheme: :http],
+  plug: MyAppWeb.Plug
 ```
 
 Now let's define the main Plug that is going to serve normal HTTP requests before we make any WebSocket connections, here you can run any plugs you might need. In this case, we are just serving the Javascript file with `Plug.Static` and rendering our counter program.
