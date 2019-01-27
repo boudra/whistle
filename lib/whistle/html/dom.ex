@@ -95,7 +95,8 @@ defmodule Whistle.Html.Dom do
     state
   end
 
-  def diff(state, path, {key, old_node}, {key, new_node}) when is_binary(new_node) or is_binary(old_node) do
+  def diff(state, path, {key, old_node}, {key, new_node})
+      when is_binary(new_node) or is_binary(old_node) do
     replace_node(state, path, key, new_node)
   end
 
@@ -464,7 +465,6 @@ defmodule Whistle.Html.Dom do
   def node_to_string({_, text}) do
     to_string(text)
   end
-
 
   defp zip([lh | lt], [rh | rt]) do
     [{lh, rh} | zip(lt, rt)]

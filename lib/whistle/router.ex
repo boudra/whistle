@@ -14,7 +14,7 @@ defmodule Whistle.Router do
 
     [
       {@registry, [keys: :unique, name: Module.concat(router, Registry)]},
-      {@supervisor, [name: Module.concat(router, Supervisor), strategy: :one_for_one]},
+      {@supervisor, [name: Module.concat(router, Supervisor), strategy: :one_for_one]}
     ] ++ http_server
   end
 

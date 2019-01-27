@@ -48,8 +48,7 @@ defmodule Whistle.Html.Parser do
     |> reduce({List, :to_string, []})
     |> map(:string_to_quoted)
 
-  tag_name =
-    ascii_string([?a..?z, ?0..?9, ?A..?Z, ?-], min: 1)
+  tag_name = ascii_string([?a..?z, ?0..?9, ?A..?Z, ?-], min: 1)
 
   text =
     utf8_char(not: ?<)

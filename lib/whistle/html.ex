@@ -52,9 +52,10 @@ defmodule Whistle.Html do
   end
 
   defmacro ahref(route, attributes, children) do
-    attributes = quote do
-      unquote(attributes) ++ [href: unquote(route), "data-whistle-href": true]
-    end
+    attributes =
+      quote do
+        unquote(attributes) ++ [href: unquote(route), "data-whistle-href": true]
+      end
 
     build_quoted_node("a", attributes, children)
   end

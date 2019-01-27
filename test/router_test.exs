@@ -32,8 +32,16 @@ defmodule RouterTest do
 
   test "url helper" do
     assert Router.url(%Plug.Conn{port: 80}, ExampleRouter) == "ws://www.example.com/ws"
-    assert Router.url(%Plug.Conn{req_headers: [{"x-forwarded-proto", "https"}], port: 80}, ExampleRouter) == "wss://www.example.com:80/ws"
-    assert Router.url(%Plug.Conn{req_headers: [{"x-forwarded-port", "443"}], port: 80}, ExampleRouter) == "ws://www.example.com:443/ws"
+
+    assert Router.url(
+             %Plug.Conn{req_headers: [{"x-forwarded-proto", "https"}], port: 80},
+             ExampleRouter
+           ) == "wss://www.example.com:80/ws"
+
+    assert Router.url(
+             %Plug.Conn{req_headers: [{"x-forwarded-port", "443"}], port: 80},
+             ExampleRouter
+           ) == "ws://www.example.com:443/ws"
   end
 
   test "route matchers" do
