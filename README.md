@@ -14,7 +14,7 @@ For an example Single Page Application including Server Side Rendering and routi
 - Demo: [https://lumpy-some-piglet.gigalixirapp.com/](https://lumpy-some-piglet.gigalixirapp.com/)
 
 
-**Please remember that this project is still in it's very early stages, test coverage is low, some things might not work and the API will most definetly change**
+**Please remember that this project is still in it's very early stages, test coverage is low, some things might not work and the API will most definetly change. Also it is just a side project for the weekends so development could be slow.**
 
 ## FAQs
 
@@ -85,7 +85,7 @@ iex> Html.span([], ["text"]) |> Whistle.Html.Dom.node_to_string()
 ## Roadmap
 
 
-What has been done, and what features are planned:
+What has been done so far:
 
 - [x] Program orchestrating, program error recovery, client auto-reconnections
 - [x] Program and client message communication and broadcasting
@@ -96,15 +96,18 @@ What has been done, and what features are planned:
 - [x] HTML string template file to VDOM tree in the view
 - [x] "Single Page Applications" with built in routing and browser history support
 - [x] Code reloading for code Programs without having to restart
-- [ ] **Session and Virtual DOM persistence between refreshes, to avoid sending the DOM every time the Websocket connects**
-- [ ] **Full EEx support for templates**
-- [ ] **Testing helpers**
-- [ ] Authentication helpers?
+
+Planned features, in order of priority:
+
+- [ ] Testing helpers
+- [ ] Session and Virtual DOM persistence between refreshes, to avoid sending the DOM every time the Websocket connects
 - [ ] Integration with Ecto for building changeset forms
+- [ ] Full EEx support for templates
+- [ ] Authentication helpers?
 - [ ] Rewrite front-end library in ES6+/Typescript for easier development
 - [ ] Write front-end library tests
 - [ ] DOM list patching (reordering, inserting)
-- [ ] Trigger classes depending on state like `classes: [wrapper: true, loading: :disconnected]` this will trigger loading when the socket is disconnected or `[spin: :loading]` for a form submit waiting for a response
+- [ ] Trigger classes depending on connection states like `classes: [wrapper: true, loading: :disconnected]` this will trigger loading when the socket is disconnected or `[spin: :loading]` for a form submit waiting for a response
 - [ ] Program state as a CRDT to distribute programs?
 
 
