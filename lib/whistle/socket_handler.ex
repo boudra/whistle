@@ -105,7 +105,7 @@ defmodule Whistle.SocketHandler do
                 new_program
 
               {:error, _error} ->
-                program
+                program_connection
             end
 
           {:reply, {:text, response},
