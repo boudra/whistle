@@ -136,7 +136,7 @@ Here is an example:
 # lib/my_app_web/program_router.ex
 
 defmodule MyAppWeb.ProgramRouter do
-  use Whistle.Router, "/ws"
+  use Whistle.Router, path: "/ws"
 
   match("counter", MyAppWeb.ExampleProgram, %{})
 end
