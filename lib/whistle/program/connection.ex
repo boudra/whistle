@@ -1,7 +1,27 @@
 defmodule Whistle.Program.Connection do
   alias Whistle.Program.Instance
 
+  @type t :: %Whistle.Program.Connection{
+          router: atom(),
+          name: String.t(),
+          session: Whistle.Session.t(),
+          handlers: map(),
+          vdom: any()
+        }
+
+  @enforce_keys [:router, :name, :vdom, :handlers, :session]
   defstruct router: nil, name: nil, lazy_trees: %{}, vdom: {0, nil}, handlers: %{}, session: %{}
+
+  @spec new(atom(), String.t(), any(), Whistle.Session.t()) :: Whistle.Program.Connection.t()
+  def new(router, program_name, dom, session) do
+    %Whistle.Program.Connection{
+      router: router,
+      name: program_name,
+      session: session,
+      handlers: %{},
+      vdom: {0, Whistle.Html.Dom.decode_node(dom)}
+    }
+  end
 
   defp handler_message(%{handlers: handlers}, name, args) do
     handlers
@@ -19,6 +39,10 @@ defmodule Whistle.Program.Connection do
     end
   end
 
+  @spec route(
+          Whistle.Program.Connection.t(),
+          any()
+        ) :: any()
   def route(program = %{router: router, name: name, session: session}, uri) do
     %{query: query, path: path} = URI.parse(uri)
     path_info = String.split(path, "/", trim: true)

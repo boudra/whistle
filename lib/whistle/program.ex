@@ -97,7 +97,7 @@ defmodule Whistle.Program do
   end
   ```
   """
-  @callback update(Whistle.message(), Whistle.state(), Socket.Session.t()) ::
+  @callback update(Whistle.message(), Whistle.state(), Whistle.Session.t()) ::
               {:ok, Whistle.state(), Whistle.Session.t()}
 
   @doc """
@@ -162,6 +162,8 @@ defmodule Whistle.Program do
   @callback view(Whistle.state(), Whistle.Session.t()) :: Whistle.Html.Dom.t()
   @optional_callbacks [handle_info: 2, authorize: 3, terminate: 1, route: 4]
 
+  @spec authorize(conn :: any(), router :: any(), program_name :: any(), params :: any()) ::
+          {:error, :not_found} | {:ok, socket :: any(), session :: any()}
   defp authorize(conn, router, program_name, params) do
     channel_path = String.split(program_name, ":")
 
@@ -267,6 +269,11 @@ defmodule Whistle.Program do
       |> Plug.Conn.put_resp_content_type("text/html")
       |> Plug.Conn.send_resp(200, resp)
     else
+      {:view, _} ->
+        raise """
+        Fullscreen programs must return a <html> tag as it's root element.
+        """
+
       {:authorize, {:error, :not_found}} ->
         # TODO: make this configurable
         Plug.Conn.send_resp(conn, 403, "Forbidden")
@@ -274,11 +281,6 @@ defmodule Whistle.Program do
       {:route, {:error, :not_found}} ->
         # TODO: make this configurable
         Plug.Conn.send_resp(conn, 404, "Not found")
-
-      {:view, _} ->
-        raise """
-        Fullscreen programs must return a <html> tag as it's root element.
-        """
     end
   end
 

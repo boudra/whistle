@@ -154,14 +154,24 @@ defmodule Whistle.Program.Instance do
     GenServer.call(via(router, name), {:update, message, session})
   end
 
+  @spec view(atom(), String.t(), any()) :: Whistle.Html.Dom.t()
   def view(router, name, session) do
     GenServer.call(via(router, name), {:view, session})
   end
 
-  def route(router, name, session, path, query_params) do
-    GenServer.call(via(router, name), {:route, session, path, query_params})
+  @spec route(
+          router :: any(),
+          name :: any(),
+          session :: Whistle.Session.t(),
+          path_info :: [String.t()],
+          query_params :: map()
+        ) ::
+          {:ok, session :: any()} | {:error, :not_found}
+  def route(router, name, session, path_info, query_params) do
+    GenServer.call(via(router, name), {:route, session, path_info, query_params})
   end
 
+  @spec send_info(atom() | binary(), any(), any()) :: :error | :ok
   def send_info(router, name, message) do
     case Program.Registry.pid(router, name) do
       :undefined ->
