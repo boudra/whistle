@@ -151,12 +151,14 @@ defmodule Whistle.Program.Instance do
 
   # API
 
-  @spec authorize(module(), String.t(), Whistle.Socket.t(), map()) :: {:ok, Whistle.Socket.t(), Whistle.Session.t()} | {:error, any()}
+  @spec authorize(module(), String.t(), Whistle.Socket.t(), map()) ::
+          {:ok, Whistle.Socket.t(), Whistle.Session.t()} | {:error, any()}
   def authorize(router, name, socket, params) do
     GenServer.call(via(router, name), {:authorize, socket, params})
   end
 
-  @spec update(module(), String.t(), any(), Whistle.Session.t()) :: {:ok, Whistle.Session.t(), [any()]} | {:error, any()}
+  @spec update(module(), String.t(), any(), Whistle.Session.t()) ::
+          {:ok, Whistle.Session.t(), [any()]} | {:error, any()}
   def update(router, name, message, session) do
     GenServer.call(via(router, name), {:update, message, session})
   end
