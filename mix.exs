@@ -65,6 +65,7 @@ defmodule Whistle.MixProject do
     [
       {:plug, "~> 1.7"},
       {:nimble_parsec, "~> 0.5.0"},
+      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
 
       # Optional dependencies
       {:jason, "~> 1.0", optional: true},

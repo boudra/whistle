@@ -23,10 +23,12 @@ defmodule Whistle.Program.Instance do
     {:via, @registry, {registry, name}}
   end
 
+  @doc false
   def start_link(arg = {router, name, _program, _params}) do
     GenServer.start_link(__MODULE__, arg, name: via(router, name))
   end
 
+  @doc false
   def init({router, name, program, params}) do
     case program.init(params) do
       {:ok, state} ->
@@ -47,6 +49,7 @@ defmodule Whistle.Program.Instance do
     end
   end
 
+  @doc false
   def terminate(reason, %{program: program, state: state, name: name, router: router}) do
     if function_exported?(program, :terminate, 1) do
       program.terminate(state)
@@ -55,6 +58,7 @@ defmodule Whistle.Program.Instance do
     Program.Registry.broadcast(router, name, {:program_terminating, name, reason})
   end
 
+  @doc false
   def handle_call(
         {:update, message, session},
         _from,
@@ -123,6 +127,7 @@ defmodule Whistle.Program.Instance do
     end
   end
 
+  @doc false
   def handle_info(
         message,
         instance = %{router: router, name: name, program: program, state: state}
@@ -146,22 +151,35 @@ defmodule Whistle.Program.Instance do
 
   # API
 
+  @spec authorize(module(), String.t(), Whistle.Socket.t(), map()) ::
+          {:ok, Whistle.Socket.t(), Whistle.Session.t()} | {:error, any()}
   def authorize(router, name, socket, params) do
     GenServer.call(via(router, name), {:authorize, socket, params})
   end
 
+  @spec update(module(), String.t(), any(), Whistle.Session.t()) ::
+          {:ok, Whistle.Session.t(), [any()]} | {:error, any()}
   def update(router, name, message, session) do
     GenServer.call(via(router, name), {:update, message, session})
   end
 
+  @spec view(module(), String.t(), Whistle.Session.t()) :: {0, Whistle.Html.Dom.t()}
   def view(router, name, session) do
     GenServer.call(via(router, name), {:view, session})
   end
 
-  def route(router, name, session, path, query_params) do
-    GenServer.call(via(router, name), {:route, session, path, query_params})
+  @spec route(
+          router :: module(),
+          name :: String.t(),
+          session :: Whistle.Session.t(),
+          path_info :: [String.t()],
+          query_params :: map()
+        ) :: {:ok, session :: any()} | {:error, :not_found}
+  def route(router, name, session, path_info, query_params) do
+    GenServer.call(via(router, name), {:route, session, path_info, query_params})
   end
 
+  @spec send_info(module(), String.t(), any()) :: :error | :ok
   def send_info(router, name, message) do
     case Program.Registry.pid(router, name) do
       :undefined ->

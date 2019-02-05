@@ -80,13 +80,7 @@ defmodule Whistle.SocketHandler do
                  Map.merge(program_params, params)
                ),
              :ok <- Program.Registry.subscribe(router, program_name, self()) do
-          program_connection = %Program.Connection{
-            router: router,
-            name: program_name,
-            handlers: %{},
-            vdom: {0, Whistle.Html.Dom.decode_node(dom)},
-            session: session
-          }
+          program_connection = Program.Connection.new(router, program_name, dom, session)
 
           program_id = generate_connection_id()
 

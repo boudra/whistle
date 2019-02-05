@@ -1,5 +1,10 @@
 defmodule Whistle.Html.Dom do
-  @type t() :: tuple()
+  @type t() ::
+          String.t()
+          | {String.t(), {keyword(), [{integer(), node()}]}}
+          | {:lazy, {atom(), any()}}
+          | {:program, {String.t(), map()}}
+          | nil
 
   defmodule Diff do
     defstruct lazy_trees: %{}, patches: [], handlers: []
