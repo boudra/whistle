@@ -165,8 +165,7 @@ defmodule Whistle.Program.Instance do
           session :: Whistle.Session.t(),
           path_info :: [String.t()],
           query_params :: map()
-        ) ::
-          {:ok, session :: any()} | {:error, :not_found}
+        ) :: {:ok, session :: any()} | {:error, :not_found}
   def route(router, name, session, path_info, query_params) do
     GenServer.call(via(router, name), {:route, session, path_info, query_params})
   end
