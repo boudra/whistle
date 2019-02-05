@@ -55,6 +55,7 @@ defmodule Whistle.Program.Instance do
     Program.Registry.broadcast(router, name, {:program_terminating, name, reason})
   end
 
+  @doc false
   def handle_call(
         {:update, message, session},
         _from,
@@ -146,15 +147,17 @@ defmodule Whistle.Program.Instance do
 
   # API
 
+  @spec authorize(module(), String.t(), Whistle.Socket.t(), map()) :: {:ok, Whistle.Socket.t(), Whistle.Session.t()} | {:error, any()}
   def authorize(router, name, socket, params) do
     GenServer.call(via(router, name), {:authorize, socket, params})
   end
 
+  @spec update(module(), String.t(), any(), Whistle.Session.t()) :: {:ok, Whistle.Session.t(), [any()]} | {:error, any()}
   def update(router, name, message, session) do
     GenServer.call(via(router, name), {:update, message, session})
   end
 
-  @spec view(atom(), String.t(), any()) :: Whistle.Html.Dom.t()
+  @spec view(module(), String.t(), Whistle.Session.t()) :: {0, Whistle.Html.Dom.t()}
   def view(router, name, session) do
     GenServer.call(via(router, name), {:view, session})
   end
