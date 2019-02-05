@@ -102,6 +102,8 @@ defmodule Whistle.SocketHandler do
                 program_connection
             end
 
+          send(self(), {:updated, program_name})
+
           {:reply, {:text, response},
            %{
              state
