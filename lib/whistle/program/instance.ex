@@ -23,10 +23,12 @@ defmodule Whistle.Program.Instance do
     {:via, @registry, {registry, name}}
   end
 
+  @doc false
   def start_link(arg = {router, name, _program, _params}) do
     GenServer.start_link(__MODULE__, arg, name: via(router, name))
   end
 
+  @doc false
   def init({router, name, program, params}) do
     case program.init(params) do
       {:ok, state} ->
@@ -47,6 +49,7 @@ defmodule Whistle.Program.Instance do
     end
   end
 
+  @doc false
   def terminate(reason, %{program: program, state: state, name: name, router: router}) do
     if function_exported?(program, :terminate, 1) do
       program.terminate(state)
@@ -124,6 +127,7 @@ defmodule Whistle.Program.Instance do
     end
   end
 
+  @doc false
   def handle_info(
         message,
         instance = %{router: router, name: name, program: program, state: state}
