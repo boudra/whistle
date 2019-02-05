@@ -2,11 +2,11 @@ defmodule Whistle.Program.Connection do
   alias Whistle.Program.Instance
 
   @type t :: %Whistle.Program.Connection{
-          router: atom(),
+          router: module(),
           name: String.t(),
           session: Whistle.Session.t(),
           handlers: map(),
-          vdom: any()
+          vdom: {0, Whistle.Html.Dom.t()}
         }
 
   @enforce_keys [:router, :name, :vdom, :handlers, :session]
