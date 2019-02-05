@@ -1,10 +1,12 @@
 defmodule ProgramTest do
   use ExUnit.Case
-  doctest Whistle
   use Plug.Test
 
   require Whistle.Html
   alias Whistle.{Program, Html}
+
+  doctest Whistle
+  doctest Whistle.Program.Connection
 
   defmodule ExampleProgram do
     use Whistle.Program
