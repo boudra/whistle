@@ -163,8 +163,8 @@ defmodule Whistle.Program.Instance do
   end
 
   @spec route(
-          router :: any(),
-          name :: any(),
+          router :: module(),
+          name :: String.t(),
           session :: Whistle.Session.t(),
           path_info :: [String.t()],
           query_params :: map()
@@ -173,7 +173,7 @@ defmodule Whistle.Program.Instance do
     GenServer.call(via(router, name), {:route, session, path_info, query_params})
   end
 
-  @spec send_info(atom() | binary(), any(), any()) :: :error | :ok
+  @spec send_info(module(), String.t(), any()) :: :error | :ok
   def send_info(router, name, message) do
     case Program.Registry.pid(router, name) do
       :undefined ->
