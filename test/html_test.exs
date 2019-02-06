@@ -1,10 +1,11 @@
 defmodule HtmlTest do
   use ExUnit.Case
-  doctest Whistle
   import Whistle.Html.Parser
 
   require Whistle.Html
   alias Whistle.Html
+
+  doctest Whistle.Html
 
   test "html parser" do
     number = 5

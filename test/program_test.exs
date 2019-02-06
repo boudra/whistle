@@ -23,6 +23,10 @@ defmodule ProgramTest do
       {:ok, state + n, session}
     end
 
+    def update({:set_session, session}, state, _) do
+      {:ok, state, session}
+    end
+
     def view(state, _session) do
       ~H"""
       <div>
@@ -49,10 +53,6 @@ defmodule ProgramTest do
       {:ok, state + n, session}
     end
 
-    def update({:set_session, session}, state, _) do
-      {:ok, state, session}
-    end
-
     def view(_state, _session) do
       params = %{"hello" => true}
 
@@ -77,22 +77,6 @@ defmodule ProgramTest do
 
   setup do
     [conn: conn(:get, "/")]
-  end
-
-  test "program connection" do
-    start_supervised(@router)
-
-    conn = Program.Connection.new(@router, @program_name, nil, %{})
-
-    assert {:ok, %{session: :something}} =
-             Program.Connection.update(conn, {:set_session, :something})
-
-    assert {0,
-            Html.div([], [
-              Html.button([on: [click: {:change, 1}]], "+"),
-              Html.span([], ["The current number is: ", "0"]),
-              Html.button([on: [click: {:change, -1}]], "-")
-            ])} == Program.Connection.view(conn)
   end
 
   test "programs" do
@@ -143,4 +127,26 @@ defmodule ProgramTest do
     assert %{resp_body: resp} = Program.fullscreen(conn, @router, "full")
     assert resp =~ "The current number is: 0"
   end
+
+  test "program connection" do
+    start_supervised(@router)
+
+    Program.Registry.ensure_started(@router, @program_name, @program, %{})
+
+    conn = Program.Connection.new(@router, @program_name, nil, %{})
+
+    {:ok, %{vdom: {0, nil}, session: :something}, []} =
+             Program.Connection.update(conn, {:set_session, :something})
+
+    {%{vdom: {0, {"div", _}}}, _} =
+             Program.Connection.update_view(conn)
+
+    assert {0,
+            Html.div([], [
+              Html.button([on: [click: {:change, 1}]], "+"),
+              Html.span([], ["The current number is: ", "0"]),
+              Html.button([on: [click: {:change, -1}]], "-")
+            ])} == Program.Connection.view(conn)
+  end
+
 end
