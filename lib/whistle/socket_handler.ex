@@ -171,8 +171,7 @@ defmodule Whistle.SocketHandler do
     {new_programs, responses} =
       Enum.reduce(programs, {[], []}, fn
         {id, program = %{name: ^name}}, {programs, responses} ->
-          new_vdom = Program.Connection.view(program)
-          {new_program, diff} = Program.Connection.put_new_vdom(program, new_vdom)
+          {new_program, diff} = Program.Connection.update_view(program, new_vdom)
 
           new_responses =
             if length(diff) > 0 do
