@@ -87,7 +87,7 @@ defmodule Whistle.Program.Connection do
     end
   end
 
-  def handle(conn, {handler, args}) do
+  def handle_event(conn, {handler, args}) do
     with {:ok, message} <- handler_message(conn, handler, args) do
       update(conn, message)
     end
@@ -98,8 +98,7 @@ defmodule Whistle.Program.Connection do
       {:ok, new_session, reply} = Instance.update(router, name, message, session)
       {:ok, %{conn | session: new_session}, reply}
     catch
-      :exit, value ->
-        IO.inspect value
+      :exit, _value ->
         {:error, :program_crash}
     end
   end

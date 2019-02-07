@@ -10,8 +10,8 @@
     return returnSockets;
   }
 
-  // exports.log = console.log;
-  exports.log = function() {};
+  exports.log = console.log;
+  // exports.log = function() {};
 
   exports.open = function(url) {
     if(sockets[url]) {
@@ -100,7 +100,7 @@
       if(event == "join") {
       } else if(event == "message") {
         newFun = this.socket.on("message", function(data) {
-          if(data.program == self.id) {
+          if(data.conn == self.id) {
             fun.call(self, data);
           }
         });
@@ -114,7 +114,7 @@
       this.state = 3;
       if(this.id) {
         exports.log("leaving", this.name, this.id);
-        this.socket.send({type: "leave", program: this.id});
+        this.socket.send({type: "leave", conn: this.id});
         // left
         this.state = 4;
       }
@@ -184,7 +184,7 @@
                   fun = function(e) {
                     self.socket.send({
                       type: "event",
-                      program: self.id,
+                      conn: self.id,
                       handler: key + "." + handler.event,
                       args: [e.state.path]
                     });
@@ -218,7 +218,7 @@
 
                     self.socket.send({
                       type: "event",
-                      program: self.id,
+                      conn: self.id,
                       handler: key + "." + handler.event,
                       args: args
                     });
@@ -304,7 +304,7 @@
 
       this.socket.send({
         type: "join",
-        requestId: requestId,
+        ref: requestId,
         program: this.name,
         params: this.params,
         dom: initialDom,
@@ -313,10 +313,10 @@
 
       var joinResponseHandler = this.socket.on("message", function (data) {
         // TODO: check join error
-        if(data.requestId == requestId) {
-          exports.log("joined", self.name, data.programId);
+        if(data.ref == requestId) {
+          exports.log("joined", self.name, data.conn);
 
-          self.id = data.programId;
+          self.id = data.conn;
           self.socket.removeListener("message", joinResponseHandler);
 
           // tried to leave and we didn't join yet, so leave immediately
@@ -421,7 +421,7 @@
     this.send = function(name, payload) {
       this.socket.send({
         type: "msg",
-        program: this.id,
+        conn: this.id,
         payload: payload
       });
     }
@@ -459,7 +459,7 @@
       e.preventDefault();
       self.socket.send({
         type: "route",
-        program: self.id,
+        conn: self.id,
         uri: e.state.uri
       });
     };
@@ -481,7 +481,7 @@
             e.preventDefault();
             self.socket.send({
               type: "route",
-              program: self.id,
+              conn: self.id,
               uri: uri
             });
             window.history.pushState({uri: uri}, "", uri);
@@ -562,7 +562,7 @@
 
     this.onMessageFor = function(program, fun) {
       var newFun = function(data) {
-        if(data.program == program) {
+        if(data.conn == program) {
           fun.call(self, data);
         }
       };
