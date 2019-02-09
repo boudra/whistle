@@ -136,10 +136,9 @@ defmodule ProgramTest do
     conn = Program.Connection.new(@router, @program_name, nil, %{})
 
     {:ok, %{vdom: {0, nil}, session: :something}, []} =
-             Program.Connection.update(conn, {:set_session, :something})
+      Program.Connection.update(conn, {:set_session, :something})
 
-    {%{vdom: {0, {"div", _}}}, _} =
-             Program.Connection.update_view(conn)
+    {%{vdom: {0, {"div", _}}}, _} = Program.Connection.update_view(conn)
 
     assert {0,
             Html.div([], [
@@ -148,5 +147,4 @@ defmodule ProgramTest do
               Html.button([on: [click: {:change, -1}]], "-")
             ])} == Program.Connection.view(conn)
   end
-
 end
