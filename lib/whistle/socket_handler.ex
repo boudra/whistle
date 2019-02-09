@@ -151,7 +151,7 @@ defmodule Whistle.SocketHandler do
       {:ok, payload = %{"type" => type}} ->
         handle_event(type, state, payload)
 
-      {:error, err} ->
+      {:error, _} ->
         # TODO: log malformed JSON error
         {:ok, state}
     end
