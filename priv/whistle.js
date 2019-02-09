@@ -10,8 +10,8 @@
     return returnSockets;
   }
 
-  exports.log = console.log;
-  // exports.log = function() {};
+  // exports.log = console.log;
+  exports.log = function() {};
 
   exports.open = function(url) {
     if(sockets[url]) {
