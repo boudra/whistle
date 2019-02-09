@@ -604,6 +604,7 @@
       if(event == "message") {
         newFun = function(e) {
           var data = JSON.parse(e.data);
+
           if(data instanceof Array) {
             data.forEach(function(message) {
               fun.call(self, message);

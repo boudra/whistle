@@ -9,10 +9,10 @@ defmodule Whistle.SocketHandler do
 
   defmodule State do
     @type t :: %__MODULE__{
-      router: module(),
-      socket: Whistle.Socket.t(),
-      conns: [Whistle.Program.Connection.t()]
-    }
+            router: module(),
+            socket: Whistle.Socket.t(),
+            conns: [Whistle.Program.Connection.t()]
+          }
 
     defstruct [:socket, :router, :conns]
   end
@@ -51,14 +51,11 @@ defmodule Whistle.SocketHandler do
     case Program.Connection.handle_event(conn, {handler, args}) do
       {:ok, new_conn, replies} ->
         if length(replies) > 0 do
-          response =
-            replies
-            |> Enum.map(fn reply ->
-              %{type: "msg", program: id, payload: reply}
-            end)
-            |> @json_library.encode!()
-
-          send(self(), {:reply, {:text, response}})
+          replies
+          |> Enum.map(fn reply ->
+            %{type: "msg", program: id, payload: reply}
+          end)
+          |> reply!()
         end
 
         {:ok, new_conn}
@@ -111,12 +108,11 @@ defmodule Whistle.SocketHandler do
 
       conn_id = generate_connection_id()
 
-      response =
-        %{
-          type: "joined",
-          ref: request_id,
-          conn: conn_id
-        }
+      response = %{
+        type: "joined",
+        ref: request_id,
+        conn: conn_id
+      }
 
       Program.Connection.notify_connection(conn, socket)
 
@@ -129,7 +125,7 @@ defmodule Whistle.SocketHandler do
             conn
         end
 
-      reply(response)
+      reply!(response)
       send(self(), {:updated, program_name})
 
       {:ok,
@@ -154,6 +150,10 @@ defmodule Whistle.SocketHandler do
     |> case do
       {:ok, payload = %{"type" => type}} ->
         handle_event(type, state, payload)
+
+      {:error, err} ->
+        # TODO: log malformed JSON error
+        {:ok, state}
     end
   end
 
@@ -189,8 +189,9 @@ defmodule Whistle.SocketHandler do
     reply_program_view(state, name)
   end
 
-  defp reply(message) do
-    send(self(), {:reply, {:text, @json_library.encode!(message)}})
+  defp reply!(message) do
+    list_message = List.wrap(message)
+    send(self(), {:reply, {:text, @json_library.encode!(list_message)}})
   end
 
   defp reply_program_view(state = %{conns: conns}, name) do
@@ -221,9 +222,9 @@ defmodule Whistle.SocketHandler do
     new_state = %{state | conns: Enum.into(new_conns, %{})}
 
     if length(responses) > 0 do
-      {:reply, {:text, @json_library.encode!(responses)}, new_state}
-    else
-      {:ok, new_state}
+      reply!(responses)
     end
+
+    {:ok, new_state}
   end
 end
