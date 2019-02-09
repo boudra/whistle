@@ -42,6 +42,15 @@ defmodule Whistle.Html do
   for tag <- @tags do
     tag_name = Atom.to_string(tag)
 
+    @doc """
+    Helper to create a `<#{tag_name}>` node.
+
+    ```
+    iex> Html.#{tag_name}([], "text")
+    {"#{tag_name}", {[], [{0, "text"}]}}
+    ```
+
+    """
     defmacro unquote(tag)(attributes \\ [], children \\ []) do
       build_quoted_node(unquote(tag_name), attributes, children)
     end
@@ -51,6 +60,15 @@ defmodule Whistle.Html do
     build_quoted_node(tag, attributes, children)
   end
 
+  @doc """
+  Create a link that will be handled by Whistle.
+
+  ```
+  iex> Html.ahref("/chat/general", [], "go to the homepage")
+  Html.a([href: "/chat/general", "data-whistle-href": true], "go to the homepage")
+  ```
+
+  """
   defmacro ahref(route, attributes, children) do
     attributes =
       quote do

@@ -87,19 +87,33 @@ defmodule Whistle.Program.Connection do
     end
   end
 
-  def update(program = %{router: router, name: name, session: session}, {handler, args}) do
-    with {:ok, message} <- handler_message(program, handler, args) do
-      try do
-        {:ok, new_session, reply} = Instance.update(router, name, message, session)
-        {:ok, %{program | session: new_session}, reply}
-      catch
-        :exit, _value ->
-          {:error, :program_crash}
-      end
+  def handle_event(conn, {handler, args}) do
+    with {:ok, message} <- handler_message(conn, handler, args) do
+      update(conn, message)
     end
   end
 
-  def put_new_vdom(program = %{handlers: handlers, lazy_trees: trees, vdom: vdom}, new_vdom) do
+  def update(conn = %{router: router, name: name, session: session}, message) do
+    try do
+      {:ok, new_session, reply} = Instance.update(router, name, message, session)
+      {:ok, %{conn | session: new_session}, reply}
+    catch
+      :exit, _value ->
+        {:error, :program_crash}
+    end
+  end
+
+  def update_view(
+        program = %{
+          router: router,
+          name: name,
+          session: session,
+          handlers: handlers,
+          lazy_trees: trees,
+          vdom: vdom
+        }
+      ) do
+    new_vdom = Instance.view(router, name, session)
     diff = Whistle.Html.Dom.diff(trees, vdom, new_vdom)
 
     handlers =
