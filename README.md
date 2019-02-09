@@ -187,15 +187,6 @@ What has been done so far:
 - [x] "Single Page Applications" with built in routing and browser history support
 - [x] Code reloading for code Programs without having to restart
 
-Planned features, in order of priority:
+Checkout the issues list to see what features are planned:
 
-- [ ] Testing helpers
-- [ ] Session and Virtual DOM persistence between refreshes, to avoid sending the DOM every time the Websocket connects
-- [ ] Integration with Ecto for building changeset forms
-- [ ] Full EEx support for templates
-- [ ] Authentication helpers?
-- [ ] Rewrite front-end library in ES6+/Typescript for easier development
-- [ ] Write front-end library tests
-- [ ] DOM list patching (reordering, inserting)
-- [ ] Trigger classes depending on connection states like `classes: [wrapper: true, loading: :disconnected]` this will trigger loading when the socket is disconnected or `[spin: :loading]` for a form submit waiting for a response
-- [ ] Program state as a CRDT to distribute programs?
+https://github.com/boudra/whistle/issues
