@@ -3,24 +3,114 @@
 
 <br>
 
-Whistle is a web framework for building interactive dynamic web apps or small components entirely in Elixir, it manages the state of your app in the server and streams the UI to a dumb client via Websockets.
+Whistle is a library for building interactive web apps or small components entirely in Elixir, it can render components in HTML and via WebSockets, all Whistle programs are able to do:
 
-- Documentation: [https://hexdocs.pm/whistle](https://hexdocs.pm/whistle)
-- [Getting started](https://hexdocs.pm/whistle/readme.html#getting-started)
+- Server side rendering, like in any modern web framework
+- Client side interactivity using an architecture similar to Elm
+- Single page application routing with Plug, so that the page doesn't need to be fully reloaded
 
 For an example Single Page Application including Server Side Rendering and routing, that uses most of Whistle's features, check out this chat application:
 
 - Code: [boudra/whistle-chat](https://github.com/boudra/whistle-chat)
 - Demo: [https://lumpy-some-piglet.gigalixirapp.com/](https://lumpy-some-piglet.gigalixirapp.com/)
 
+Links:
 
-**Please remember that this project is still in it's very early stages, test coverage is low, some things might not work and the API will most definetly change. Also it is just a side project for the weekends so development could be slow.**
+- Documentation: [https://hexdocs.pm/whistle](https://hexdocs.pm/whistle)
+- [Getting started](https://hexdocs.pm/whistle/readme.html#getting-started)
+
+
+**Please remember that this project is still in it's very early stages, some things might not work and the API will most definetly change. Also it is just a side project at the moment so development could be slow.**
+
+
+## Installation
+
+```elixir
+def deps do
+  [
+    {:whistle, git: "https://github.com/boudra/whistle", ref: "master"},
+    # {:whistle, "~> 0.1.0"},
+
+    # optional
+    {:jason, "~> 1.0"}, # for encoding and decoding JSON
+    {:horde, "~> 0.4.0"} # for distributing the program processes
+  ]
+end
+```
+
+## Getting started
+
+The router is where everything starts, it defines the path of the Websocket listener and what routes match to what programs.
+
+Here is an example:
+
+```elixir
+# lib/my_app_web/program_router.ex
+
+defmodule MyAppWeb.ProgramRouter do
+  use Whistle.Router, path: "/ws"
+
+  match("counter", MyAppWeb.ExampleProgram, %{})
+end
+```
+
+Use `Whistle.Router.match/3` to define program routes, the router will spawn a new program instance for every unique route.
+
+The program is a module where we specify how to manage and render its state, here is a very simple example:
+
+```elixir
+# lib/my_app_web/programs/example_program.ex
+
+defmodule MyAppWeb.ExampleProgram do
+  use Whistle.Program
+
+  def init(_params) do
+    {:ok, 0}
+  end
+
+  def update(:increment, state, session) do
+    {:ok, state + 1, session}
+  end
+
+  def update(:decrement, state, session) do
+    {:ok, state - 1, session}
+  end
+
+  def view(state, _session) do
+    ~H"""
+    <div>
+      <button on-click={{ :increment }}>+</button>
+      <span>The current number is: {{ state }}></span>
+      <button on-click={{ :decrement }}>-</button>
+    </div>
+    """
+  end
+end
+```
+
+Check out the docs for `Whistle.Program` to see all the callbacks available and the different ways to render the view.
+
+All you need to do now is add the router in your supervision tree, a router will spawn a dynamic Supervisor and Registry to keep track of all the program instances, you can run as many different routers as you want:
+
+```elixir
+# lib/my_app/application.ex
+
+children = [
+  {MyAppWeb.ProgramRouter, []}
+]
+```
+
+Now that you have a router and a program set up, it's time to link everything up with a server, Whistle works with Plug so it doesn't need Phoenix to run, but you can integrate with an existing Phoenix project too:
+
+- [Running with Whistle and Plug](https://hexdocs.pm/whistle/setup.html)
+- [Integrate with your existing Phoenix project](https://hexdocs.pm/whistle/phoenix.html)
+
 
 ## FAQs
 
 ### What problems does Whistle address?
 
-Whistle is a web framework that works a bit differently than normal MVC web frameworks. It is composed of stateful long-running components, allowing you to create interactive applications entirely in Elixir via WebSockets, while being also able to render an HTML page like any other web framework.
+Whistle is a web library that works a bit differently than normal MVC web frameworks. It is composed of stateful long-running components, allowing you to create interactive applications entirely in Elixir via WebSockets, while being also able to render an HTML page like any other web framework.
 
 It aims to provide a more functional approach to building web apps in Elixir, while also taking more advantage of Erlang's actor model.
 
@@ -109,86 +199,3 @@ Planned features, in order of priority:
 - [ ] DOM list patching (reordering, inserting)
 - [ ] Trigger classes depending on connection states like `classes: [wrapper: true, loading: :disconnected]` this will trigger loading when the socket is disconnected or `[spin: :loading]` for a form submit waiting for a response
 - [ ] Program state as a CRDT to distribute programs?
-
-
-## Installation
-
-```elixir
-def deps do
-  [
-    {:whistle, git: "https://github.com/boudra/whistle", ref: "master"},
-    # {:whistle, "~> 0.1.0"},
-
-    # optional
-    {:jason, "~> 1.0"}, # for encoding and decoding JSON
-    {:horde, "~> 0.4.0"} # for distributing the program processes
-  ]
-end
-```
-
-## Getting started
-
-The router is where everything starts, it defines the path of the Websocket listener and what routes match to what programs.
-
-Here is an example:
-
-```elixir
-# lib/my_app_web/program_router.ex
-
-defmodule MyAppWeb.ProgramRouter do
-  use Whistle.Router, path: "/ws"
-
-  match("counter", MyAppWeb.ExampleProgram, %{})
-end
-```
-
-Use `Whistle.Router.match/3` to define program routes, the router will spawn a new program instance for every unique route.
-
-The program is a module where we specify how to manage and render its state, here is a very simple example:
-
-```elixir
-# lib/my_app_web/programs/example_program.ex
-
-defmodule MyAppWeb.ExampleProgram do
-  use Whistle.Program
-
-  def init(_params) do
-    {:ok, 0}
-  end
-
-  def update(:increment, state, session) do
-    {:ok, state + 1, session}
-  end
-
-  def update(:decrement, state, session) do
-    {:ok, state - 1, session}
-  end
-
-  def view(state, _session) do
-    ~H"""
-    <div>
-      <button on-click={{ :increment }}>+</button>
-      <span>The current number is: {{ state }}></span>
-      <button on-click={{ :decrement }}>-</button>
-    </div>
-    """
-  end
-end
-```
-
-Check out the docs for `Whistle.Program` to see all the callbacks available and the different ways to render the view.
-
-All you need to do now is add the router in your supervision tree, a router will spawn a dynamic Supervisor and Registry to keep track of all the program instances, you can run as many different routers as you want:
-
-```elixir
-# lib/my_app/application.ex
-
-children = [
-  {MyAppWeb.ProgramRouter, []}
-]
-```
-
-Now that you have a router and a program set up, it's time to link everything up with a server, Whistle works with Plug so it doesn't need Phoenix to run, but you can integrate with an existing Phoenix project too:
-
-- [Running with Whistle and Plug](https://hexdocs.pm/whistle/setup.html)
-- [Integrate with your existing Phoenix project](https://hexdocs.pm/whistle/phoenix.html)
